@@ -17,13 +17,16 @@ const viewAllStudents = (req, res, service) => {
  */
 const addStudent = (req, res, service) => {
     try {
+        console.log('addStudent called with params:', req.params);
         const { deptId, classId } = req.params;
         const { studentId, name, rollNumber } = req.body;
+        console.log('Body:', { studentId, name, rollNumber });
 
         if (!studentId || !name || !rollNumber) {
             return res.status(400).json({ error: 'Student ID, Name, and Roll Number are required.' });
         }
 
+        console.log('Calling service.addStudent...');
         const newChain = service.addStudent(
             deptId.toUpperCase(), 
             classId.toUpperCase(), 
@@ -31,6 +34,7 @@ const addStudent = (req, res, service) => {
             name, 
             rollNumber
         );
+        console.log('addStudent service completed, newChain:', newChain);
         
         res.status(201).json({ 
             message: `Student ${studentId} added/updated in ${classId}.`, 
@@ -138,6 +142,24 @@ const viewAttendanceHistory = (req, res, service) => {
     }
 };
 
+/**
+ * Handles GET request to retrieve the blockchain chain blocks for a student.
+ * Used for debugging and chain validation.
+ */
+const getStudentChainBlocks = (req, res, service) => {
+    try {
+        const { deptId, classId, studentId } = req.params;
+        const blocks = service.getStudentChainBlocks(
+            deptId.toUpperCase(),
+            classId.toUpperCase(),
+            studentId.toUpperCase()
+        );
+        res.status(200).json({ blocks });
+    } catch (error) {
+        console.error("500 Error in getStudentChainBlocks:", error.message, error.stack);
+        res.status(404).json({ error: error.message });
+    }
+};
 
 module.exports = {
     viewAllStudents,
@@ -145,5 +167,6 @@ module.exports = {
     updateStudent,
     deleteStudent,
     markAttendance,
-    viewAttendanceHistory
+    viewAttendanceHistory,
+    getStudentChainBlocks
 };

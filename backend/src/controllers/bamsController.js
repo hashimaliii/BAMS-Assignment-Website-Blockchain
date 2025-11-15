@@ -1,11 +1,11 @@
-const bamsService = require('../services/bamsService');
 
 /**
  * Handles the GET request to validate the entire three-layered blockchain structure.
  * Returns a report detailing the validity status of every department, class, and student chain.
  */
-const validateSystemIntegrity = (req, res) => {
+const validateSystemIntegrity = (req, res, bamsService) => {
     try {
+        // bamsService is injected by apiRoutes; call the service's runFullValidation method
         const validationResult = bamsService.runFullValidation();
 
         if (validationResult.overallValid) {

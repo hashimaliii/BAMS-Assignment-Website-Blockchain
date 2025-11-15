@@ -82,9 +82,21 @@ const deleteClass = (req, res, service) => {
     }
 };
 
+const getClassChainBlocks = (req, res, service) => {
+    try {
+        const { deptId, classId } = req.params;
+        const blocks = service.getClassChainBlocks(deptId.toUpperCase(), classId.toUpperCase());
+        res.status(200).json({ blocks });
+    } catch (error) {
+        console.error('500 Error in getClassChainBlocks:', error.message, error.stack);
+        res.status(400).json({ error: error.message });
+    }
+};
+
 module.exports = {
     viewAllClasses,
     addClass,
     updateClass,
     deleteClass,
+    getClassChainBlocks,
 };

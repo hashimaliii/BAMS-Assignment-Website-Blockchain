@@ -11,7 +11,7 @@ module.exports = (Hierarchy) => {
                 const chain = classes[classId].chain;
                 const latestTransaction = chain.getLatestBlock().transactions;
                 
-                if (latestTransaction.status === 'deleted') {
+                if (latestTransaction.status === 'deleted' || String(latestTransaction.type || '').includes('DELETE')) {
                     return null;
                 }
 
@@ -49,7 +49,7 @@ module.exports = (Hierarchy) => {
             };
 
             const newBlock = classChain.addBlock(transaction);
-            Hierarchy.saveState(Hierarchy.departments);
+            Hierarchy.saveState();
             return newBlock;
         },
         
@@ -68,8 +68,22 @@ module.exports = (Hierarchy) => {
             };
 
             const newBlock = classChain.addBlock(transaction);
-            Hierarchy.saveState(Hierarchy.departments);
+            Hierarchy.saveState();
             return newBlock;
+        },
+
+        // --- DEBUG: Return raw class chain blocks ---
+        getClassChainBlocks: (deptId, classId) => {
+            const classChain = Hierarchy.getClassChain(deptId, classId);
+            if (!classChain) throw new Error('Class not found.');
+            return classChain.chain.map(b => ({
+                index: b.index,
+                timestamp: b.timestamp,
+                transactions: b.transactions,
+                prev_hash: b.prev_hash,
+                nonce: b.nonce,
+                hash: b.hash
+            }));
         }
     };
 };

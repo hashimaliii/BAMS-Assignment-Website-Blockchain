@@ -11,7 +11,7 @@ module.exports = (Hierarchy) => {
                 const chain = students[studentId];
                 const latestTransaction = chain.getLatestBlock().transactions;
                 
-                if (latestTransaction.status === 'deleted') {
+                if (latestTransaction.status === 'deleted' || String(latestTransaction.type || '').includes('DELETE')) {
                     return null;
                 }
                 
@@ -52,7 +52,7 @@ module.exports = (Hierarchy) => {
             };
 
             const newBlock = studentChain.addBlock(transaction);
-            Hierarchy.saveState(Hierarchy.departments);
+            Hierarchy.saveState();
             return newBlock;
         },
         
@@ -71,8 +71,22 @@ module.exports = (Hierarchy) => {
             };
 
             const newBlock = studentChain.addBlock(transaction);
-            Hierarchy.saveState(Hierarchy.departments);
+            Hierarchy.saveState();
             return newBlock;
+        },
+
+        // --- DEBUG: Return raw student chain blocks ---
+        getStudentChainBlocks: (deptId, classId, studentId) => {
+            const studentChain = Hierarchy.getStudentChain(deptId, classId, studentId);
+            if (!studentChain) throw new Error('Student not found.');
+            return studentChain.chain.map(b => ({
+                index: b.index,
+                timestamp: b.timestamp,
+                transactions: b.transactions,
+                prev_hash: b.prev_hash,
+                nonce: b.nonce,
+                hash: b.hash
+            }));
         },
 
         // --- ATTENDANCE MODULE ---
@@ -92,7 +106,7 @@ module.exports = (Hierarchy) => {
             };
             
             const newBlock = studentChain.addBlock(attendanceTransaction);
-            Hierarchy.saveState(Hierarchy.departments);
+            Hierarchy.saveState();
             return newBlock;
         },
 
@@ -111,7 +125,10 @@ module.exports = (Hierarchy) => {
                     timestamp: block.timestamp,
                     date: block.transactions.date,
                     status: block.transactions.status,
-                    hash: block.hash
+                    hash: block.hash,
+                    prev_hash: block.prev_hash,
+                    nonce: block.nonce,
+                    transactions: block.transactions
                 }));
         }
     };

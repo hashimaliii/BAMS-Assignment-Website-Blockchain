@@ -79,10 +79,24 @@ const deleteDepartment = (req, res, service) => {
     }
 };
 
+/**
+ * Debug endpoint to return raw chain blocks for a department.
+ */
+const getDepartmentChainBlocks = (req, res, service) => {
+    try {
+        const { deptId } = req.params;
+        const blocks = service.getDepartmentChainBlocks(deptId.toUpperCase());
+        res.status(200).json({ blocks });
+    } catch (error) {
+        console.error('500 Error in getDepartmentChainBlocks:', error.message, error.stack);
+        res.status(400).json({ error: error.message });
+    }
+};
 
 module.exports = {
     viewAllDepartments,
     addDepartment,
     updateDepartment,
     deleteDepartment,
+    getDepartmentChainBlocks,
 };

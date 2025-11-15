@@ -45,6 +45,11 @@
             background-color: #f4f7fa; /* Match body background */
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
+
+        /* Explicitly define hidden class to ensure it works */
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
@@ -126,9 +131,26 @@
         // --- Utility Functions ---
 
         function showLoading(show) {
+            console.log('[SHOW_LOADING]', show ? 'Showing spinner, hiding content' : 'Hiding spinner, showing content');
             document.getElementById('loading-indicator').classList.toggle('hidden', !show);
-            document.getElementById('list-view').classList.toggle('hidden', show);
-            document.getElementById('history-view').classList.add('hidden');
+            
+            // Only manage list-view visibility when NOT in history view
+            // In history view, setView() and viewStudentChain() manage the visibility
+            if (currentState.view !== 'history') {
+                document.getElementById('list-view').classList.toggle('hidden', show);
+            }
+            
+            // Only hide history-view when showing loading spinner
+            // When hiding spinner, don't touch history-view - let setView() manage its visibility
+            if (show) {
+                document.getElementById('history-view').classList.add('hidden');
+            } else {
+                // If we're in history view, make sure it's visible
+                if (currentState.view === 'history') {
+                    document.getElementById('history-view').classList.remove('hidden');
+                    console.log('[SHOW_LOADING] Restored history-view visibility for history view');
+                }
+            }
         }
 
         function showMessage(type, message, details = '') {
@@ -198,7 +220,21 @@
                     return { success: true, message: "Operation successful, no content returned." };
                 }
 
-                const data = await response.json();
+                // Read the response body as text first; this lets us capture HTML response bodies (useful for debugging 404/5xx)
+                const contentType = response.headers.get('content-type') || '';
+                const textBody = await response.text();
+                let data = null;
+                if (contentType.includes('application/json')) {
+                    try {
+                        data = JSON.parse(textBody);
+                    } catch (e) {
+                        // If JSON parse fails unexpectedly, add the raw text for inspection
+                        throw new Error(`Invalid JSON from server: ${textBody.substring(0, 200)}`);
+                    }
+                } else {
+                    // Non-JSON response (HTML or text) — include raw body in error to surface server response
+                    throw new Error(`Non-JSON response from server (status ${response.status}). Body: ${textBody.substring(0, 200)}`);
+                }
 
                 if (!response.ok) {
                     // Handle 400 Bad Request
@@ -216,7 +252,7 @@
             } catch (error) {
                 console.error("Fetch Error:", error);
                 // The fix in showMessage allows this to display correctly now
-                showMessage('error', `API Request Failed:`, error.message); 
+                showMessage('error', `API Request Failed:`, error.message);
                 return null;
             }
         }
@@ -413,6 +449,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                             <button class="text-blue-600 hover:text-blue-900 text-xs mr-3" onclick="setView('history', '${deptId}', '${classId}', '${student.id}', '${student.name}')">View Ledger</button>
+                            <button class="text-purple-600 hover:text-purple-900 text-xs mr-3" onclick="viewStudentChain('${deptId}', '${classId}', '${student.id}', '${student.name}')">View Chain</button>
                             <button class="text-yellow-600 hover:text-yellow-900 text-xs mr-3" onclick="openCrudModal('Update Student', 'PUT', '${deptId}', '${classId}', '${student.id}')">Edit</button>
                             <button class="text-red-600 hover:text-red-900 text-xs" onclick="confirmDelete('Student', '${deptId}', '${classId}', '${student.id}')">Delete</button>
                         </td>
@@ -445,21 +482,21 @@
             modalTitle.textContent = title;
             modalContent.innerHTML = `
                 <form id="crud-form">
-                    ${!classId ? `
+                    ${title.includes('Department') ? `
                         <label class="block text-gray-700 text-sm font-bold mb-2">Department ID</label>
                         <input type="text" name="deptId" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-4" placeholder="e.g., MATH" value="${itemId || ''}" ${itemId && method === 'PUT' ? 'disabled' : ''}>
                         <label class="block text-gray-700 text-sm font-bold mb-2">Department Name</label>
                         <input type="text" name="name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-4" placeholder="e.g., School of Mathematics">
-                    ` : classId && !itemId ? `
+                    ` : title.includes('Class') ? `
                         <p class="text-xs text-gray-500 mb-4">Under Department: <strong>${deptId}</strong></p>
                         <label class="block text-gray-700 text-sm font-bold mb-2">Class ID</label>
                         <input type="text" name="classId" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-4" placeholder="e.g., MATH-101">
                         <label class="block text-gray-700 text-sm font-bold mb-2">Class Name</label>
                         <input type="text" name="name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-4" placeholder="e.g., Calculus I">
-                    ` : classId && itemId && title.includes('Student') ? `
+                    ` : title.includes('Student') ? `
                         <p class="text-xs text-gray-500 mb-4">Under Class: <strong>${classId}</strong></p>
                         <label class="block text-gray-700 text-sm font-bold mb-2">Student ID</label>
-                        <input type="text" name="studentId" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-4" placeholder="e.g., S-001" value="${itemId || ''}" disabled>
+                        <input type="text" name="studentId" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-4" placeholder="e.g., S-001" value="${itemId || ''}" ${method === 'PUT' ? 'disabled' : ''}>
                         <label class="block text-gray-700 text-sm font-bold mb-2">Name</label>
                         <input type="text" name="name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-4" placeholder="e.g., Jane Doe">
                         <label class="block text-gray-700 text-sm font-bold mb-2">Roll Number</label>
@@ -486,36 +523,53 @@
             const formData = new FormData(form);
             const body = {};
             
+            // Collect all form fields first
+            const allFields = {};
             formData.forEach((value, key) => {
-                // For PUT, only send non-empty fields
-                if (method === 'PUT' && key !== 'deptId' && key !== 'classId' && value) {
-                    body[key] = value;
-                } else if (method === 'POST') {
-                    body[key] = value;
-                }
+                allFields[key] = value;
             });
 
-            // Determine URL and ID for POST
-            let url = '';
-            let id = deptId;
+            // Get the title from modal to determine what we're doing
+            const title = document.getElementById('modal-title').textContent;
 
+            // Filter body to only include relevant fields based on context
             if (method === 'POST') {
-                if (!classId) { // Add Department
-                    url = buildPath();
-                    id = body.deptId;
-                } else if (!itemId) { // Add Class
-                    url = buildPath(deptId);
-                    id = body.classId;
-                } else { // Add Student
-                    url = buildPath(deptId, classId);
-                    id = body.studentId;
+                if (title.includes('Department')) { // Adding Department
+                    body.deptId = allFields.deptId;
+                    body.name = allFields.name;
+                } else if (title.includes('Class')) { // Adding Class
+                    body.classId = allFields.classId;
+                    body.name = allFields.name;
+                } else if (title.includes('Student')) { // Adding Student
+                    body.studentId = allFields.studentId;
+                    body.name = allFields.name;
+                    body.rollNumber = allFields.rollNumber;
                 }
             } else if (method === 'PUT') {
-                if (!classId) { // Update Department
+                // For updates, include all non-empty fields except IDs
+                for (const key in allFields) {
+                    if (key !== 'deptId' && key !== 'classId' && key !== 'studentId' && allFields[key]) {
+                        body[key] = allFields[key];
+                    }
+                }
+            }
+
+            // Determine URL
+            let url = '';
+            if (method === 'POST') {
+                if (title.includes('Department')) { // Add Department
+                    url = `${API_BASE_URL}/departments`;
+                } else if (title.includes('Class')) { // Add Class
+                    url = `${API_BASE_URL}/departments/${deptId}/classes`;
+                } else if (title.includes('Student')) { // Add Student
+                    url = `${API_BASE_URL}/departments/${deptId}/classes/${classId}/students`;
+                }
+            } else if (method === 'PUT') {
+                if (title.includes('Department')) { // Update Department
                     url = buildPath(deptId);
-                } else if (!itemId) { // Update Class
+                } else if (title.includes('Class')) { // Update Class
                     url = buildPath(deptId, classId);
-                } else { // Update Student
+                } else if (title.includes('Student')) { // Update Student
                     url = buildPath(deptId, classId, itemId);
                 }
             }
@@ -525,8 +579,16 @@
 
             if (result) {
                 showMessage('success', result.message);
-                // Refresh the current view
-                setView(currentState.view, currentState.deptId, currentState.classId);
+                // Determine what to refresh based on title
+                if (title.includes('Department')) {
+                    setView('departments');
+                } else if (title.includes('Class')) {
+                    setView('classes', deptId);
+                } else if (title.includes('Student')) {
+                    setView('students', deptId, classId);
+                } else {
+                    setView(currentState.view, currentState.deptId, currentState.classId);
+                }
             }
         }
 
@@ -573,34 +635,50 @@
         // --- History and Validation ---
 
         async function fetchStudentHistory(deptId, classId, studentId, studentName) {
+            console.log('[FETCH_HISTORY] Called with:', { deptId, classId, studentId, studentName });
             document.getElementById('student-details-card').innerHTML = `
                 <p class="text-xl font-bold">${studentName}</p>
                 <p class="text-gray-500">ID: ${studentId} | Class: ${classId} | Dept: ${deptId}</p>
             `;
             
             showLoading(true);
-            const data = await fetchData(buildPath(deptId, classId, studentId) + '/history');
+            const url = buildPath(deptId, classId, studentId) + '/history';
+            console.log('[FETCH_HISTORY] Requesting URL:', url);
+            const data = await fetchData(url);
+            console.log('[FETCH_HISTORY] Response data:', data);
             showLoading(false);
 
             const blockchainDataEl = document.getElementById('blockchain-data');
+            console.log('[FETCH_HISTORY] blockchainDataEl:', blockchainDataEl);
+            console.log('[FETCH_HISTORY] history-view hidden status:', document.getElementById('history-view').classList.contains('hidden'));
             blockchainDataEl.innerHTML = '';
 
             if (data && data.history) {
-                data.history.forEach(block => {
+                if (data.history.length === 0) {
+                    blockchainDataEl.innerHTML = '<p class="text-center text-gray-500 p-8">No attendance records found. Mark attendance to see records here.</p>';
+                    console.log('[FETCH_HISTORY] No records found');
+                    return;
+                }
+                console.log('[FETCH_HISTORY] Found', data.history.length, 'attendance records');
+                
+                let htmlContent = '';
+                data.history.forEach((block, idx) => {
+                    console.log(`[FETCH_HISTORY] Rendering block ${idx}:`, block);
                     const blockType = block.transactions?.type;
                     const isAttendance = blockType === 'ATTENDANCE_RECORD';
+                    const attendanceStatus = block.transactions?.status || block.status;
                     
                     let statusColor = 'bg-gray-100 border-gray-300';
                     let statusIcon = 'ℹ️';
 
                     if (isAttendance) {
-                        if (block.status === 'Present') {
+                        if (attendanceStatus === 'Present') {
                             statusColor = 'bg-green-100 border-green-300';
                             statusIcon = '✅';
-                        } else if (block.status === 'Absent') {
+                        } else if (attendanceStatus === 'Absent') {
                             statusColor = 'bg-red-100 border-red-300';
                             statusIcon = '❌';
-                        } else if (block.status === 'Leave') {
+                        } else if (attendanceStatus === 'Leave') {
                             statusColor = 'bg-yellow-100 border-yellow-300';
                             statusIcon = '🟡';
                         }
@@ -609,14 +687,14 @@
                         statusIcon = '🗑️';
                     }
 
-                    blockchainDataEl.innerHTML += `
+                    htmlContent += `
                         <div class="${statusColor} p-4 rounded-lg border-l-4 card-shadow">
                             <div class="flex justify-between items-start">
                                 <span class="font-bold text-lg">${statusIcon} Block #${block.index} (${blockType})</span>
                                 <span class="text-xs text-gray-500">${new Date(block.timestamp).toLocaleString()}</span>
                             </div>
                             
-                            <p class="mt-2 text-sm text-gray-700"><strong>Status:</strong> ${block.status || 'Metadata Update'}</p>
+                            <p class="mt-2 text-sm text-gray-700"><strong>Status:</strong> ${attendanceStatus || 'Metadata Update'}</p>
                             <p class="text-sm text-gray-700"><strong>Date:</strong> ${block.date || 'N/A'}</p>
                             
                             <p class="text-xs text-gray-500 mt-3 break-all"><strong>Hash:</strong> ${block.hash}</p>
@@ -625,11 +703,112 @@
                         </div>
                     `;
                 });
+                
+                console.log('[FETCH_HISTORY] Setting innerHTML with', data.history.length, 'blocks');
+                blockchainDataEl.innerHTML = htmlContent;
+                console.log('[FETCH_HISTORY] innerHTML set. Element now contains:', blockchainDataEl.innerHTML.length, 'characters');
             } else {
                 blockchainDataEl.innerHTML = '<p class="text-center text-gray-500 p-8">No blockchain data found for this student.</p>';
             }
         }
 
+        async function viewStudentChain(deptId, classId, studentId, studentName) {
+            // First, set up the view properly (similar to fetchStudentHistory)
+            currentState.view = 'history';
+            currentState.deptId = deptId;
+            currentState.classId = classId;
+            currentState.studentId = studentId;
+            currentState.studentName = studentName;
+            
+            document.getElementById('current-view-title').textContent = `Complete Blockchain for ${studentName || studentId}`;
+            
+            // Explicitly hide and show the right divs
+            const listView = document.getElementById('list-view');
+            const historyView = document.getElementById('history-view');
+            
+            console.log('[VIEW_CHAIN] Before: list-view hidden =', listView.classList.contains('hidden'), ', history-view hidden =', historyView.classList.contains('hidden'));
+            
+            listView.classList.add('hidden');
+            historyView.classList.remove('hidden');
+            
+            console.log('[VIEW_CHAIN] After: list-view hidden =', listView.classList.contains('hidden'), ', history-view hidden =', historyView.classList.contains('hidden'));
+            
+            console.log('[VIEW_CHAIN] Called with:', { deptId, classId, studentId, studentName });
+            document.getElementById('student-details-card').innerHTML = `
+                <p class="text-xl font-bold">${studentName}</p>
+                <p class="text-gray-500">ID: ${studentId} | Class: ${classId} | Dept: ${deptId}</p>
+                <p class="text-xs text-blue-600 mt-2">Viewing Complete Blockchain</p>
+            `;
+            
+            showLoading(true);
+            const url = buildPath(deptId, classId, studentId) + '/chain';
+            console.log('[VIEW_CHAIN] Requesting URL:', url);
+            const data = await fetchData(url);
+            console.log('[VIEW_CHAIN] Response data:', data);
+            showLoading(false);
+
+            const blockchainDataEl = document.getElementById('blockchain-data');
+            console.log('[VIEW_CHAIN] blockchainDataEl:', blockchainDataEl);
+            console.log('[VIEW_CHAIN] history-view hidden status:', document.getElementById('history-view').classList.contains('hidden'));
+            blockchainDataEl.innerHTML = '';
+
+            if (data && data.blocks) {
+                console.log('[VIEW_CHAIN] Found', data.blocks.length, 'blocks');
+                if (data.blocks.length === 0) {
+                    blockchainDataEl.innerHTML = '<p class="text-center text-gray-500 p-8">No blocks found in this student chain. This should not happen - each student should have at least a genesis block.</p>';
+                    return;
+                }
+                
+                let htmlContent = '';
+                console.log('[VIEW_CHAIN] Starting to render', data.blocks.length, 'blocks');
+                data.blocks.forEach((block, idx) => {
+                    if (idx === 0 || idx === data.blocks.length - 1) {
+                        console.log(`[VIEW_CHAIN] Rendering block ${idx}/${data.blocks.length}:`, block);
+                    }
+                    const blockType = block.transactions?.type || 'GENESIS';
+                    let statusColor = 'bg-indigo-100 border-indigo-300';
+
+                    if (blockType === 'GENESIS') {
+                        statusColor = 'bg-indigo-100 border-indigo-300';
+                    } else if (blockType === 'ATTENDANCE_RECORD') {
+                        if (block.transactions?.status === 'Present') {
+                            statusColor = 'bg-green-100 border-green-300';
+                        } else if (block.transactions?.status === 'Absent') {
+                            statusColor = 'bg-red-100 border-red-300';
+                        } else if (block.transactions?.status === 'Leave') {
+                            statusColor = 'bg-yellow-100 border-yellow-300';
+                        } else {
+                            statusColor = 'bg-blue-100 border-blue-300';
+                        }
+                    } else if (blockType && blockType.includes('DELETE')) {
+                        statusColor = 'bg-red-100 border-red-300';
+                    } else if (blockType && blockType.includes('UPDATE')) {
+                        statusColor = 'bg-orange-100 border-orange-300';
+                    }
+
+                    htmlContent += `
+                        <div class="${statusColor} p-4 rounded-lg border-l-4 card-shadow">
+                            <div class="flex justify-between items-start">
+                                <span class="font-bold text-lg">Block #${block.index} (${blockType})</span>
+                                <span class="text-xs text-gray-500">${new Date(block.timestamp).toLocaleString()}</span>
+                            </div>
+                            
+                            <p class="mt-2 text-sm text-gray-700"><strong>Transactions:</strong> ${JSON.stringify(block.transactions).substring(0, 200)}...</p>
+                            
+                            <p class="text-xs text-gray-500 mt-3 break-all"><strong>Hash:</strong> ${block.hash}</p>
+                            <p class="text-xs text-gray-500 break-all"><strong>Prev Hash:</strong> ${block.prev_hash || '---'}</p>
+                            <p class="text-xs text-gray-500"><strong>Nonce:</strong> ${block.nonce || '---'}</p>
+                        </div>
+                    `;
+                });
+                
+                console.log('[VIEW_CHAIN] Setting innerHTML with', data.blocks.length, 'blocks');
+                blockchainDataEl.innerHTML = htmlContent;
+                console.log('[VIEW_CHAIN] innerHTML set. Element now contains:', blockchainDataEl.innerHTML.length, 'characters');
+            } else {
+                blockchainDataEl.innerHTML = '<p class="text-center text-gray-500 p-8">No blockchain data found for this student.</p>';
+            }
+        }
 
         document.getElementById('validation-btn').addEventListener('click', async () => {
             document.getElementById('validation-btn').textContent = "🔍 Running Validation...";

@@ -55,7 +55,7 @@ class HierarchyManager {
         });
         
         this.isLoaded = true;
-        saveState(this.departments); // Save initial state
+        this.saveState(); // Save initial state
         console.log("Default structure creation complete.");
     }
     
@@ -69,7 +69,7 @@ class HierarchyManager {
             
             // Reconstruct Department Chain (Layer 1)
             const deptChain = new Blockchain(rawDept.chain.chainId, rawDept.chain.initialPrevHash, {});
-            deptChain.chain = rawDept.chain.chain.map(this._reconstructBlock);
+            deptChain.chain = rawDept.chain.chain.map(block => this._reconstructBlock(block));
             deptChain.isLoaded = true; // Mark as loaded to skip genesis creation
             
             departments[deptId] = { chain: deptChain, classes: {} };
@@ -79,7 +79,7 @@ class HierarchyManager {
 
                 // Reconstruct Class Chain (Layer 2)
                 const classChain = new Blockchain(rawClass.chain.chainId, rawClass.chain.initialPrevHash, {});
-                classChain.chain = rawClass.chain.chain.map(this._reconstructBlock);
+                classChain.chain = rawClass.chain.chain.map(block => this._reconstructBlock(block));
                 classChain.isLoaded = true;
                 
                 departments[deptId].classes[classId] = { chain: classChain, students: {} };
@@ -89,7 +89,7 @@ class HierarchyManager {
 
                     // Reconstruct Student Chain (Layer 3)
                     const studentChain = new Blockchain(rawStudent.chainId, rawStudent.initialPrevHash, {});
-                    studentChain.chain = rawStudent.chain.map(this._reconstructBlock);
+                    studentChain.chain = rawStudent.chain.map(block => this._reconstructBlock(block));
                     studentChain.isLoaded = true;
                     
                     departments[deptId].classes[classId].students[studentId] = studentChain;
@@ -109,6 +109,73 @@ class HierarchyManager {
         return block;
     }
 
+    /**
+     * Persist the current in-memory hierarchy to disk. Services may call this method
+     * to ensure any state changes are saved without importing fileService directly.
+     * @param {Object|null} data - Optional departments object to write; defaults to this.departments
+     */
+    saveState(data = null) {
+        try {
+            const { saveState } = require('../utils/fileService');
+            // Convert live objects to serializable format
+            console.log('Starting to serialize hierarchy...');
+            const serializableData = this._serializeHierarchy(data || this.departments);
+            console.log('Serialization complete, writing to file...');
+            saveState(serializableData);
+            console.log('State saved successfully.');
+        } catch (err) {
+            console.error('Error persisting state in HierarchyManager.saveState:', err);
+            console.error('Stack:', err.stack);
+            throw err; // Re-throw to see the error in parent context
+        }
+    }
+
+    /**
+     * Converts live Blockchain objects to plain JSON-serializable objects
+     */
+    _serializeHierarchy(departments) {
+        const serialized = {};
+        for (const deptId in departments) {
+            const dept = departments[deptId];
+            serialized[deptId] = {
+                chain: {
+                    chainId: dept.chain.chainId,
+                    chain: dept.chain.chain, // Array of raw blocks (already plain objects or serializable)
+                    difficulty: dept.chain.difficulty,
+                    initialPrevHash: dept.chain.initialPrevHash,
+                    isLoaded: dept.chain.isLoaded || false
+                },
+                classes: {}
+            };
+            
+            for (const classId in dept.classes) {
+                const classObj = dept.classes[classId];
+                serialized[deptId].classes[classId] = {
+                    chain: {
+                        chainId: classObj.chain.chainId,
+                        chain: classObj.chain.chain,
+                        difficulty: classObj.chain.difficulty,
+                        initialPrevHash: classObj.chain.initialPrevHash,
+                        isLoaded: classObj.chain.isLoaded || false
+                    },
+                    students: {}
+                };
+                
+                for (const studentId in classObj.students) {
+                    const studentChain = classObj.students[studentId];
+                    serialized[deptId].classes[classId].students[studentId] = {
+                        chainId: studentChain.chainId,
+                        chain: studentChain.chain,
+                        difficulty: studentChain.difficulty,
+                        initialPrevHash: studentChain.initialPrevHash,
+                        isLoaded: studentChain.isLoaded || false
+                    };
+                }
+            }
+        }
+        return serialized;
+    }
+
 
     // --- Layer 1: Department Management ---
 
@@ -125,7 +192,7 @@ class HierarchyManager {
             chain: deptChain,
             classes: {} 
         };
-        saveState(this.departments);
+        this.saveState();
         return deptChain;
     }
 
@@ -147,7 +214,7 @@ class HierarchyManager {
             chain: classChain,
             students: {} 
         };
-        saveState(this.departments);
+        this.saveState();
         return classChain;
     }
 
@@ -176,7 +243,7 @@ class HierarchyManager {
         const studentChain = new Blockchain(studentId, parentHash, studentData); // Genesis prev_hash MUST be the class chain's latest block hash
 
         classObj.students[studentId] = studentChain;
-        saveState(this.departments);
+        this.saveState();
         return studentChain;
     }
 
@@ -201,64 +268,71 @@ class HierarchyManager {
     // --- Mandatory Multi-Level Validation Logic ---
 
     validateAllChains() {
-        let overallValid = true;
-        const validationReport = {};
+        try {
+            let overallValid = true;
+            const validationReport = {};
 
-        for (const deptId in this.departments) {
-            const deptObj = this.departments[deptId];
-            validationReport[deptId] = { valid: true, classes: {} };
+            for (const deptId in this.departments) {
+                const deptObj = this.departments[deptId];
+                validationReport[deptId] = { valid: true, classes: {} };
 
-            // A. Validate Layer 1: Department Chain (Internal Check)
-            const deptValid = deptObj.chain.isChainValid();
-            validationReport[deptId].valid = deptValid;
-            if (!deptValid) {
-                overallValid = false;
-            }
-
-            for (const classId in deptObj.classes) {
-                const classObj = deptObj.classes[classId];
-                validationReport[deptId].classes[classId] = { valid: true, students: {} };
-
-                // B. Validate Layer 2: Class Chain (Internal Check)
-                const classInternalValid = classObj.chain.isChainValid();
-                
-                // C. Validate Layer 2 Link: Class Chain Genesis link to Department Chain
-                const expectedParentHash = deptObj.chain.getLatestBlock().hash;
-                const classGenesisValid = classObj.chain.chain[0].prev_hash === expectedParentHash;
-                
-                if (!classInternalValid || !classGenesisValid || !deptValid) {
-                    // If Dept Chain is invalid, all its children are automatically compromised
+                // A. Validate Layer 1: Department Chain (Internal Check)
+                const deptValid = deptObj.chain.isChainValid();
+                validationReport[deptId].valid = deptValid;
+                if (!deptValid) {
                     overallValid = false;
-                    validationReport[deptId].classes[classId].valid = false;
-                    validationReport[deptId].classes[classId].reason = `Internal: ${classInternalValid ? 'OK' : 'FAIL'}, Link: ${classGenesisValid ? 'OK' : 'FAIL'}, Parent Dept: ${deptValid ? 'OK' : 'COMPROMISED'}`;
-                } else {
-                    validationReport[deptId].classes[classId].valid = true;
                 }
 
-                // E. Check Student Chains
-                for (const studentId in classObj.students) {
-                    const studentChain = classObj.students[studentId];
-                    validationReport[deptId].classes[classId].students[studentId] = { valid: true };
+                for (const classId in deptObj.classes) {
+                    const classObj = deptObj.classes[classId];
+                    validationReport[deptId].classes[classId] = { valid: true, students: {} };
 
-                    // D. Validate Layer 3: Student Chain (Internal Check)
-                    const studentInternalValid = studentChain.isChainValid();
+                    // B. Validate Layer 2: Class Chain (Internal Check)
+                    const classInternalValid = classObj.chain.isChainValid();
                     
-                    // E. Validate Layer 3 Link: Student Chain Genesis link to Class Chain
-                    const expectedClassHash = classObj.chain.getLatestBlock().hash;
-                    const studentGenesisValid = studentChain.chain[0].prev_hash === expectedClassHash;
+                    // C. Validate Layer 2 Link: Class Chain Genesis link to Department Chain
+                    const expectedParentHash = deptObj.chain.getLatestBlock().hash;
+                    const classGenesisValid = classObj.chain.chain[0].prev_hash === expectedParentHash;
                     
-                    if (!studentInternalValid || !studentGenesisValid || !validationReport[deptId].classes[classId].valid) {
-                        // If Class Chain is invalid (or its parent), all its children are automatically compromised
+                    if (!classInternalValid || !classGenesisValid || !deptValid) {
+                        // If Dept Chain is invalid, all its children are automatically compromised
                         overallValid = false;
-                        validationReport[deptId].classes[classId].students[studentId].valid = false;
-                        validationReport[deptId].classes[classId].students[studentId].reason = `Internal: ${studentInternalValid ? 'OK' : 'FAIL'}, Link: ${studentGenesisValid ? 'OK' : 'FAIL'}, Parent Class: ${validationReport[deptId].classes[classId].valid ? 'OK' : 'COMPROMISED'}`;
+                        validationReport[deptId].classes[classId].valid = false;
+                        validationReport[deptId].classes[classId].reason = `Internal: ${classInternalValid ? 'OK' : 'FAIL'}, Link: ${classGenesisValid ? 'OK' : 'FAIL'}, Parent Dept: ${deptValid ? 'OK' : 'COMPROMISED'}`;
+                    } else {
+                        validationReport[deptId].classes[classId].valid = true;
+                    }
+
+                    // E. Check Student Chains
+                    for (const studentId in classObj.students) {
+                        const studentChain = classObj.students[studentId];
+                        validationReport[deptId].classes[classId].students[studentId] = { valid: true };
+
+                        // D. Validate Layer 3: Student Chain (Internal Check)
+                        const studentInternalValid = studentChain.isChainValid();
+                        
+                        // E. Validate Layer 3 Link: Student Chain Genesis link to Class Chain
+                        const expectedClassHash = classObj.chain.getLatestBlock().hash;
+                        const studentGenesisValid = studentChain.chain[0].prev_hash === expectedClassHash;
+                        
+                        if (!studentInternalValid || !studentGenesisValid || !validationReport[deptId].classes[classId].valid) {
+                            // If Class Chain is invalid (or its parent), all its children are automatically compromised
+                            overallValid = false;
+                            validationReport[deptId].classes[classId].students[studentId].valid = false;
+                            validationReport[deptId].classes[classId].students[studentId].reason = `Internal: ${studentInternalValid ? 'OK' : 'FAIL'}, Link: ${studentGenesisValid ? 'OK' : 'FAIL'}, Parent Class: ${validationReport[deptId].classes[classId].valid ? 'OK' : 'COMPROMISED'}`;
+                        }
                     }
                 }
             }
+            
+            console.log(`\nOverall Hierarchy Validation Status: ${overallValid ? '✅ VALID' : '❌ INVALID'}`);
+            return { overallValid, report: validationReport };
+        } catch (err) {
+            console.error('[VALIDATION_ERROR] validateAllChains crashed:', err.message);
+            console.error('[VALIDATION_ERROR] Stack:', err.stack);
+            // Return safe invalid response to prevent server crash
+            return { overallValid: false, report: { error: err.message } };
         }
-        
-        console.log(`\nOverall Hierarchy Validation Status: ${overallValid ? '✅ VALID' : '❌ INVALID'}`);
-        return { overallValid, report: validationReport };
     }
 }
 

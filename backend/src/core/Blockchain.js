@@ -57,6 +57,12 @@ class Blockchain {
         if (!genesisBlock.hash.startsWith(this.difficulty) || genesisBlock.hash !== genesisBlock.calculateBlockHash()) {
             return false;
         }
+        
+        // Validate genesis block's prev_hash matches the expected parent hash (hierarchical linkage)
+        if (genesisBlock.prev_hash !== this.initialPrevHash) {
+            console.error(`Chain ${this.chainId}: Genesis block prev_hash does not match expected parent hash. Expected: ${this.initialPrevHash}, Got: ${genesisBlock.prev_hash}`);
+            return false;
+        }
 
         // Iterate through all blocks starting from the second one (index 1)
         for (let i = 1; i < this.chain.length; i++) {
