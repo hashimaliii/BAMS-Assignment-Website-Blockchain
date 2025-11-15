@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAMS - Hierarchical Blockchain Attendance System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        h1 { color: #2c3e50; }
+        .container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .panel { flex: 1 1 45%; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .panel h2 { border-bottom: 2px solid #3498db; padding-bottom: 10px; color: #3498db; }
+        button { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; background-color: #2ecc71; color: white; margin-right: 5px; }
+        button:hover { background-color: #27ae60; }
+        input[type="text"] { padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; width: 80%; }
+        select { padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        #output, #validationOutput { margin-top: 20px; padding: 10px; border: 1px solid #ccc; background-color: #ecf0f1; white-space: pre-wrap; word-wrap: break-word; }
+        .error { color: #e74c3c; font-weight: bold; }
+        .success { color: #2ecc71; font-weight: bold; }
+        .dept-item, .class-item, .student-item { padding: 5px; border-bottom: 1px dotted #bdc3c7; cursor: pointer; }
+        .dept-item:hover, .class-item:hover, .student-item:hover { background-color: #f0f8ff; }
+        .block-display { border: 1px solid #95a5a6; margin: 5px 0; padding: 10px; border-radius: 4px; background-color: #f9f9f9; }
+        .block-hash { font-size: 0.8em; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+    <h1>🏢 Blockchain-Based Attendance Management System (BAMS)</h1>
+    <p>Backend running on Node.js/Express. **Check the console for PoW mining logs.**</p>
+    
+    <div class="container">
+        <div class="panel">
+            <h2>Department Management (Layer 1)</h2>
+            <input type="text" id="deptId" placeholder="Dept ID (e.g., COMP)">
+            <input type="text" id="deptName" placeholder="Dept Name">
+            <button onclick="addDepartment()">➕ Add Department</button>
+            <button onclick="viewAllDepartments()">📋 View All</button>
+            <hr>
+            <h2>System Validation</h2>
+            <button onclick="runValidation()">🛡️ Run Full Validation Check</button>
+            <div id="validationOutput"></div>
+        </div>
+
+        <div class="panel">
+            <h2>Class & Student Management (Layer 2 & 3)</h2>
+            <p>Select Department: 
+                <select id="selectDept" onchange="loadClasses()"></select>
+                <button onclick="addClass()">➕ Add Class</button>
+            </p>
+            <p>Select Class: 
+                <select id="selectClass" onchange="loadStudents()"></select>
+                <button onclick="addStudent()">➕ Add Student</button>
+            </p>
+            
+            <hr>
+            <h3>Attendance & History</h3>
+            <p>Select Student: <select id="selectStudent"></select></p>
+            <input type="text" id="attendanceStatus" placeholder="Status (Present, Absent, Leave)">
+            <button onclick="markAttendance()">✍️ Mark Attendance</button>
+            <button onclick="viewAttendanceHistory()">📜 View History</button>
+        </div>
+    </div>
+
+    <div id="output"></div>
+
+    <script src="app.js"></script>
+    <script>
+        // Initial load of departments on page load
+        document.addEventListener('DOMContentLoaded', viewAllDepartments);
+    </script>
+</body>
+</html>

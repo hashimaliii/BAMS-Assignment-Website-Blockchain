@@ -1,0 +1,30 @@
+{
+  "name": "bams-assignment-website-blockchain",
+  "version": "1.0.0",
+  "description": "Blockchain-Based Attendance Management System",
+  "main": "backend/index.js",
+  "scripts": {
+    "start": "node backend/index.js",
+    "dev": "nodemon backend/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hashimaliii/BAMS-Assignment-Website-Blockchain.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hashimaliii/BAMS-Assignment-Website-Blockchain/issues"
+  },
+  "homepage": "https://github.com/hashimaliii/BAMS-Assignment-Website-Blockchain#readme",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
