@@ -2540,6 +2540,19 @@
               "prev_hash": "0050e23d6b762b64bd940440698fdf48f6dad414d82bf646e4cdfd923083c167",
               "nonce": 49,
               "hash": "0041dd23c4ed4acb3e7f0c72ec4793f822fb4e1f22c62a279ba06f26b0baf973"
+            },
+            {
+              "index": 1,
+              "timestamp": 1763237826292,
+              "transactions": {
+                "type": "CLASS_DELETE",
+                "id": "COMP-C4",
+                "timestamp": 1763237826292,
+                "status": "deleted"
+              },
+              "prev_hash": "0041dd23c4ed4acb3e7f0c72ec4793f822fb4e1f22c62a279ba06f26b0baf973",
+              "nonce": 71,
+              "hash": "00406b33ee1a26f3f89dbc6c452fc5cb1088db59241b3963b0eb59d8e4805509"
             }
           ],
           "difficulty": "00",
@@ -3370,6 +3383,19 @@
               "prev_hash": "0050e23d6b762b64bd940440698fdf48f6dad414d82bf646e4cdfd923083c167",
               "nonce": 163,
               "hash": "005186c7a72c4cd90b8779fef0da8b3fdbd2b84d1bfffb01a12e2269d569c637"
+            },
+            {
+              "index": 1,
+              "timestamp": 1763237822726,
+              "transactions": {
+                "type": "CLASS_DELETE",
+                "id": "COMP-C5",
+                "timestamp": 1763237822726,
+                "status": "deleted"
+              },
+              "prev_hash": "005186c7a72c4cd90b8779fef0da8b3fdbd2b84d1bfffb01a12e2269d569c637",
+              "nonce": 413,
+              "hash": "00f379e607c1ba2a3bc1545b9cc1c647bfe6533ce2ec07f67ec57f837b155013"
             }
           ],
           "difficulty": "00",
@@ -8359,5 +8385,28 @@
         }
       }
     }
+  },
+  "MAT": {
+    "chain": {
+      "chainId": "MAT",
+      "chain": [
+        {
+          "index": 0,
+          "timestamp": 1763237759612,
+          "transactions": {
+            "type": "DEPT_METADATA",
+            "id": "MAT",
+            "name": "School Math"
+          },
+          "prev_hash": "0",
+          "nonce": 223,
+          "hash": "00c41a5b8d5274b5c7adb904139c48d319d99ad6af36f029d4704d194e7dd636"
+        }
+      ],
+      "difficulty": "00",
+      "initialPrevHash": "0",
+      "isLoaded": true
+    },
+    "classes": {}
   }
 }
