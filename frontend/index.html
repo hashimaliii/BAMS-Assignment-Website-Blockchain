@@ -6,6 +6,7 @@
     <title>BAMS Hierarchy Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         /* Apply the Inter font globally */
         body {
@@ -68,6 +69,9 @@
                 <button id="home-btn" class="bg-gray-200 text-gray-700 hover:bg-gray-300 px-5 py-2 rounded-lg font-semibold text-sm shadow-md" onclick="setView('departments')">
                     🏠 Home
                 </button>
+                <button id="view-3d-btn" class="bg-purple-500 text-white hover:bg-purple-600 px-5 py-2 rounded-lg font-semibold text-sm shadow-md" onclick="setView('hierarchy3d')">
+                    🎯 3D Hierarchy Tree
+                </button>
             </div>
         </header>
 
@@ -76,6 +80,24 @@
 
         <!-- Breadcrumbs -->
         <div id="breadcrumbs" class="mb-6 text-gray-600 text-sm font-medium"></div>
+
+        <!-- Search Bar -->
+        <div id="search-container" class="mb-6 flex gap-3">
+            <input 
+                type="text" 
+                id="search-input" 
+                placeholder="🔍 Search departments, classes, or students..." 
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                oninput="performSearch(this.value)"
+            />
+            <button 
+                id="clear-search-btn" 
+                class="bg-gray-300 text-gray-700 hover:bg-gray-400 px-4 py-2 rounded-lg font-medium text-sm hidden"
+                onclick="clearSearch()"
+            >
+                Clear
+            </button>
+        </div>
 
         <!-- Main Content Area -->
         <div id="main-content">
@@ -99,6 +121,18 @@
                 <h3 class="text-xl font-bold text-gray-700 mb-3 mt-8">Blockchain Ledger (Student Chain)</h3>
                 <div id="blockchain-data" class="space-y-4">
                     <!-- Blocks injected here -->
+                </div>
+            </div>
+
+            <!-- 3D Hierarchy View -->
+            <div id="hierarchy3d-view" class="hidden w-full">
+                <div id="canvas-container" style="width: 100%; height: 600px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-gray-600"><strong>3D Hierarchy Controls:</strong></p>
+                    <p class="text-xs text-gray-500 mt-2">
+                        • Drag to rotate • Scroll to zoom • Right-click + drag to pan<br>
+                        • Green nodes = Departments • Blue nodes = Classes • Orange nodes = Students
+                    </p>
                 </div>
             </div>
         </div>
@@ -291,6 +325,7 @@
             // Hide all content containers
             document.getElementById('list-view').classList.remove('hidden');
             document.getElementById('history-view').classList.add('hidden');
+            document.getElementById('hierarchy3d-view').classList.add('hidden');
             
             document.getElementById('list-view').innerHTML = '';
             
@@ -318,8 +353,208 @@
                     document.getElementById('history-view').classList.remove('hidden');
                     fetchStudentHistory(deptId, classId, studentId, studentName);
                     break;
+                case 'hierarchy3d':
+                    document.getElementById('current-view-title').textContent = '3D Hierarchy Tree - All Departments, Classes & Students';
+                    document.getElementById('list-view').classList.add('hidden');
+                    document.getElementById('hierarchy3d-view').classList.remove('hidden');
+                    // Clear previous canvas
+                    const container = document.getElementById('canvas-container');
+                    if (container.firstChild && container.firstChild.tagName === 'CANVAS') {
+                        container.removeChild(container.firstChild);
+                    }
+                    setTimeout(() => init3DVisualization(), 100);
+                    break;
             }
             updateBreadcrumbs();
+        }
+
+        // --- Search Functionality ---
+        
+        let allData = {
+            departments: [],
+            allClasses: {},  // deptId -> classes
+            allStudents: {}   // classId -> students
+        };
+
+        async function performSearch(query) {
+            const searchInput = document.getElementById('search-input');
+            const clearBtn = document.getElementById('clear-search-btn');
+            
+            query = query.toLowerCase().trim();
+            
+            // Show/hide clear button
+            clearBtn.classList.toggle('hidden', !query);
+            
+            if (!query) {
+                clearBtn.classList.add('hidden');
+                return; // User cleared the search
+            }
+            
+            // Fetch all data if not already loaded
+            if (allData.departments.length === 0) {
+                await loadAllSearchData();
+            }
+            
+            const results = searchAcrossLayers(query);
+            displaySearchResults(results, query);
+        }
+
+        async function loadAllSearchData() {
+            try {
+                // Fetch all departments
+                const depts = await fetchData(`${API_BASE_URL}/departments`);
+                allData.departments = depts || [];
+                
+                // Fetch all classes for each department
+                for (const dept of allData.departments) {
+                    const classes = await fetchData(`${API_BASE_URL}/departments/${dept.id}/classes`);
+                    allData.allClasses[dept.id] = classes || [];
+                    
+                    // Fetch all students for each class
+                    for (const cls of (classes || [])) {
+                        const students = await fetchData(`${API_BASE_URL}/departments/${dept.id}/classes/${cls.id}/students`);
+                        allData.allStudents[cls.id] = students || [];
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading search data:', error);
+            }
+        }
+
+        function searchAcrossLayers(query) {
+            const results = {
+                departments: [],
+                classes: [],
+                students: []
+            };
+            
+            // Search departments
+            results.departments = allData.departments.filter(dept =>
+                dept.name.toLowerCase().includes(query) ||
+                dept.id.toLowerCase().includes(query)
+            );
+            
+            // Search classes
+            for (const deptId in allData.allClasses) {
+                const classes = allData.allClasses[deptId];
+                const matchedClasses = classes.filter(cls =>
+                    cls.name.toLowerCase().includes(query) ||
+                    cls.id.toLowerCase().includes(query)
+                );
+                
+                for (const cls of matchedClasses) {
+                    results.classes.push({ ...cls, deptId });
+                }
+            }
+            
+            // Search students
+            for (const classId in allData.allStudents) {
+                const students = allData.allStudents[classId];
+                const matchedStudents = students.filter(student =>
+                    student.name.toLowerCase().includes(query) ||
+                    student.id.toLowerCase().includes(query) ||
+                    student.rollNumber?.toString().includes(query)
+                );
+                
+                // Get deptId from classId format (e.g., "COMP-C1-S01" -> "COMP")
+                const deptId = classId.split('-')[0];
+                
+                for (const student of matchedStudents) {
+                    results.students.push({ ...student, deptId, classId });
+                }
+            }
+            
+            return results;
+        }
+
+        function displaySearchResults(results, query) {
+            document.getElementById('current-view-title').textContent = `Search Results for "${query}"`;
+            
+            let html = '<div class="space-y-8">';
+            
+            // Departments
+            if (results.departments.length > 0) {
+                html += `<div>
+                    <h3 class="text-lg font-bold text-blue-600 mb-3">Departments (${results.departments.length})</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
+                
+                html += results.departments.map(dept => `
+                    <div class="container-bg p-4 rounded-lg card-shadow flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-blue-600">${highlightMatch(dept.name, query)}</h4>
+                            <p class="text-xs text-gray-500">ID: ${dept.id}</p>
+                        </div>
+                        <button class="mt-3 bg-blue-500 text-white hover:bg-blue-600 px-3 py-1 rounded text-sm" onclick="setView('classes', '${dept.id}')">
+                            View Classes
+                        </button>
+                    </div>
+                `).join('');
+                
+                html += '</div></div>';
+            }
+            
+            // Classes
+            if (results.classes.length > 0) {
+                html += `<div>
+                    <h3 class="text-lg font-bold text-green-600 mb-3">Classes (${results.classes.length})</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
+                
+                html += results.classes.map(cls => `
+                    <div class="container-bg p-4 rounded-lg card-shadow flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-green-600">${highlightMatch(cls.name, query)}</h4>
+                            <p class="text-xs text-gray-500">ID: ${cls.id}</p>
+                            <p class="text-xs text-gray-400">Dept: ${cls.deptId}</p>
+                        </div>
+                        <button class="mt-3 bg-green-500 text-white hover:bg-green-600 px-3 py-1 rounded text-sm" onclick="setView('students', '${cls.deptId}', '${cls.id}')">
+                            View Students
+                        </button>
+                    </div>
+                `).join('');
+                
+                html += '</div></div>';
+            }
+            
+            // Students
+            if (results.students.length > 0) {
+                html += `<div>
+                    <h3 class="text-lg font-bold text-orange-600 mb-3">Students (${results.students.length})</h3>
+                    <div class="space-y-2">`;
+                
+                html += results.students.map(student => `
+                    <div class="container-bg p-3 rounded-lg card-shadow flex justify-between items-center">
+                        <div>
+                            <p class="font-medium text-orange-600">${highlightMatch(student.name, query)}</p>
+                            <p class="text-xs text-gray-500">ID: ${student.id} | Roll: ${student.rollNumber} | Class: ${student.classId}</p>
+                        </div>
+                        <button class="bg-orange-500 text-white hover:bg-orange-600 px-3 py-1 rounded text-sm" onclick="setView('history', '${student.deptId}', '${student.classId}', '${student.id}', '${student.name}')">
+                            View Ledger
+                        </button>
+                    </div>
+                `).join('');
+                
+                html += '</div></div>';
+            }
+            
+            if (results.departments.length === 0 && results.classes.length === 0 && results.students.length === 0) {
+                html += '<p class="text-center text-gray-500 py-8">No results found for your search.</p>';
+            }
+            
+            html += '</div>';
+            
+            document.getElementById('list-view').innerHTML = html;
+            document.getElementById('list-view').classList.remove('hidden');
+        }
+
+        function highlightMatch(text, query) {
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<mark style="background-color: #fbbf24;">$1</mark>');
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('clear-search-btn').classList.add('hidden');
+            setView('departments');
         }
 
         // --- API Calls and Renderers ---
@@ -831,6 +1066,256 @@
                 console.log("--- End Report ---");
             }
         });
+
+        // --- 3D Hierarchy Visualization ---
+        let scene, camera, renderer, controls;
+        const nodeObjects = {};
+
+        function init3DVisualization() {
+            console.log('[3D] Initializing 3D visualization...');
+            const container = document.getElementById('canvas-container');
+            if (!container) {
+                console.error('[3D] Canvas container not found!');
+                return;
+            }
+
+            console.log('[3D] Container found, size:', container.clientWidth, 'x', container.clientHeight);
+
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x667eea);
+            scene.fog = new THREE.Fog(0x667eea, 500, 1000);
+
+            // Camera setup
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000);
+            camera.position.set(0, 50, 100);
+            camera.lookAt(0, 0, 0);
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+            console.log('[3D] Renderer created and added to DOM');
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(100, 100, 100);
+            scene.add(directionalLight);
+            console.log('[3D] Lighting added');
+
+            // Simple orbit-like controls
+            setupControls();
+
+            // Create hierarchy
+            loadAndVisualize3DTree();
+
+            // Animation loop
+            animate();
+            console.log('[3D] Animation loop started');
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function setupControls() {
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+
+            document.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+
+                    // Rotate camera
+                    const radius = Math.sqrt(camera.position.x ** 2 + camera.position.y ** 2 + camera.position.z ** 2);
+                    const theta = Math.atan2(camera.position.z, camera.position.x);
+                    const phi = Math.acos(camera.position.y / radius);
+
+                    const newTheta = theta + deltaX * 0.005;
+                    const newPhi = Math.max(0.1, Math.min(Math.PI - 0.1, phi + deltaY * 0.005));
+
+                    camera.position.x = radius * Math.sin(newPhi) * Math.cos(newTheta);
+                    camera.position.y = radius * Math.cos(newPhi);
+                    camera.position.z = radius * Math.sin(newPhi) * Math.sin(newTheta);
+                    camera.lookAt(0, 0, 0);
+                }
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            document.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const radius = Math.sqrt(camera.position.x ** 2 + camera.position.y ** 2 + camera.position.z ** 2);
+                const newRadius = radius + e.deltaY * 0.1;
+                const factor = newRadius / radius;
+
+                camera.position.multiplyScalar(factor);
+                camera.lookAt(0, 0, 0);
+            }, { passive: false });
+        }
+
+        async function loadAndVisualize3DTree() {
+            console.log('[3D] Starting to load hierarchy...');
+            // Fetch all departments
+            const deptsData = await fetchData(`${API_BASE_URL}/departments`);
+            console.log('[3D] Departments data:', deptsData);
+            
+            // Check if deptsData is an array or has a departments property
+            const departments = Array.isArray(deptsData) ? deptsData : (deptsData?.departments || []);
+            
+            if (!departments || departments.length === 0) {
+                console.error('[3D] No departments data returned');
+                return;
+            }
+
+            console.log('[3D] Creating visualization for', departments.length, 'departments');
+            let yOffset = 0;
+            let xOffset = -150;
+
+            for (const dept of departments) {
+                console.log('[3D] Processing department:', dept.id);
+                // Create department node
+                const deptNode = createSphere(xOffset, yOffset, 0, 20, 0x00aa00); // Green
+                nodeObjects[`dept-${dept.id}`] = deptNode;
+                const deptLabel = createTextSprite(dept.id, 0xffffff);
+                deptLabel.position.copy(deptNode.position);
+                deptLabel.position.y += 30;
+                scene.add(deptLabel);
+
+                // Fetch classes for this department
+                const classesData = await fetchData(`${API_BASE_URL}/departments/${dept.id}/classes`);
+                console.log('[3D] Classes for', dept.id, ':', classesData);
+                
+                // Check if classesData is an array or has a classes property
+                const classes = Array.isArray(classesData) ? classesData : (classesData?.classes || []);
+                
+                if (classes && classes.length > 0) {
+                    let classYOffset = yOffset - 60;
+                    let classXOffset = xOffset - 100;
+
+                    for (let i = 0; i < classes.length; i++) {
+                        const cls = classes[i];
+                        console.log('[3D] Processing class:', cls.id);
+                        const classNode = createSphere(classXOffset, classYOffset, 50, 15, 0x0066ff); // Blue
+                        nodeObjects[`class-${cls.id}`] = classNode;
+
+                        // Draw line from dept to class
+                        drawLine(deptNode.position, classNode.position, 0x888888);
+
+                        const classLabel = createTextSprite(cls.id.substring(0, 8), 0xffffff);
+                        classLabel.position.copy(classNode.position);
+                        classLabel.position.y += 25;
+                        scene.add(classLabel);
+
+                        // Fetch students for this class
+                        const studentsData = await fetchData(`${API_BASE_URL}/departments/${dept.id}/classes/${cls.id}/students`);
+                        console.log('[3D] Students for', cls.id, ':', studentsData);
+                        
+                        // Check if studentsData is an array or has a students property
+                        const students = Array.isArray(studentsData) ? studentsData : (studentsData?.students || []);
+                        
+                        if (students && students.length > 0) {
+                            let studentYOffset = classYOffset - 40;
+                            let studentXOffset = classXOffset - 50;
+
+                            for (let j = 0; j < Math.min(students.length, 5); j++) {
+                                const student = students[j];
+                                const studentNode = createSphere(studentXOffset + j * 30, studentYOffset, 100, 10, 0xff9933); // Orange
+                                nodeObjects[`student-${student.id}`] = studentNode;
+
+                                // Draw line from class to student
+                                drawLine(classNode.position, studentNode.position, 0x666666);
+
+                                const studentLabel = createTextSprite(student.id.substring(0, 5), 0xffffff);
+                                studentLabel.position.copy(studentNode.position);
+                                studentLabel.position.y += 15;
+                                scene.add(studentLabel);
+                            }
+                        }
+
+                        classYOffset -= 50;
+                        if (i % 2 === 1) {
+                            classXOffset += 150;
+                            classYOffset = yOffset - 60;
+                        }
+                    }
+                }
+
+                xOffset += 300;
+            }
+            console.log('[3D] Hierarchy visualization complete. Total nodes:', Object.keys(nodeObjects).length);
+        }
+
+        function createSphere(x, y, z, size, color) {
+            const geometry = new THREE.SphereGeometry(size, 32, 32);
+            const material = new THREE.MeshPhongMaterial({ color });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, y, z);
+            scene.add(mesh);
+            console.log('[3D] Created sphere at', x, y, z, 'with size', size, 'color', color.toString(16));
+            return mesh;
+        }
+
+        function createTextSprite(text, color) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 256;
+            canvas.height = 64;
+
+            context.fillStyle = '#' + color.toString(16).padStart(6, '0');
+            context.font = 'bold 40px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text, 128, 32);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const geometry = new THREE.PlaneGeometry(40, 10);
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Mesh(geometry, material);
+            return sprite;
+        }
+
+        function drawLine(start, end, color) {
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+                start.x, start.y, start.z,
+                end.x, end.y, end.z
+            ]), 3));
+            const material = new THREE.LineBasicMaterial({ color });
+            const line = new THREE.Line(geometry, material);
+            scene.add(line);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            if (!renderer) return;
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
 
         // --- Initialization ---
         window.onload = () => {

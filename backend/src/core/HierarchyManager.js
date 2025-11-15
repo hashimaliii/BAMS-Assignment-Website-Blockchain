@@ -33,6 +33,18 @@ class HierarchyManager {
         this.addDepartment('COMP', 'School of Computing'); 
         this.addDepartment('SE', 'School of Software Engineering'); 
 
+        // Diverse student names list
+        const studentNames = [
+            'Aarav Patel', 'Ananya Singh', 'Arjun Kumar', 'Aisha Khan', 'Akshay Sharma',
+            'Bhavna Gupta', 'Bhuvan Nair', 'Chirag Verma', 'Chitra Desai', 'Dheeru Malhotra',
+            'Divya Iyer', 'Esha Reddy', 'Faisal Ahmed', 'Farah Hassan', 'Gaurav Saxena',
+            'Geetika Mishra', 'Harpreet Singh', 'Harini Mehra', 'Ishaan Pandey', 'Ishmeet Kaur',
+            'Jasmine Chopra', 'Javed Khan', 'Karan Walia', 'Kavya Rao', 'Khushboo Jain',
+            'Leela Ramakrishnan', 'Madhav Kumar', 'Mahima Verma', 'Manish Rajput', 'Meera Nambiar',
+            'Nikhil Sinha', 'Nivedita Bhat', 'Omkar Deshpande', 'Priya Bhatnagar', 'Puneet Malhar',
+            'Radhika Srivastava', 'Rahul Tripathi', 'Rakshanda Patil', 'Sameer Kapoor', 'Sameera Mirza'
+        ];
+
         // Add 5 classes to each department
         ['COMP', 'SE'].forEach(deptId => {
             for (let i = 1; i <= 5; i++) {
@@ -43,11 +55,12 @@ class HierarchyManager {
                 for (let j = 1; j <= 35; j++) {
                     const studentId = `${classId}-S${j.toString().padStart(2, '0')}`;
                     const rollNumber = 1000 + j;
+                    const studentName = studentNames[(j - 1) % studentNames.length];
                     this.addStudent(
                         deptId, 
                         classId, 
                         studentId, 
-                        `Student ${j} of ${classId}`, 
+                        studentName, 
                         rollNumber
                     );
                 }
@@ -203,12 +216,12 @@ class HierarchyManager {
         if (!dept) throw new Error(`Department ${deptId} not found.`);
         if (dept.classes[classId]) throw new Error(`Class ${classId} already exists.`);
 
-        // 1. Get the latest hash of the parent Department Chain (Crucial linkage)
-        const parentHash = dept.chain.getLatestBlock().hash; 
+        // 1. Get the GENESIS hash of the parent Department Chain (for linkage)
+        const parentHash = dept.chain.chain[0].hash; // Link to department genesis, not latest
 
         // 2. Create the Layer 2 Class Chain
         const classData = { type: 'CLASS_METADATA', id: classId, name: name, deptId: deptId };
-        const classChain = new Blockchain(classId, parentHash, classData); // Genesis prev_hash MUST be the department's latest block hash
+        const classChain = new Blockchain(classId, parentHash, classData); // Genesis prev_hash links to department genesis
 
         dept.classes[classId] = {
             chain: classChain,
@@ -229,7 +242,7 @@ class HierarchyManager {
         if (classObj.students[studentId]) throw new Error(`Student ${studentId} already exists.`);
         
         // 1. Get the latest hash of the parent Class Chain (Crucial linkage)
-        const parentHash = classObj.chain.getLatestBlock().hash;
+        const parentHash = classObj.chain.chain[0].hash; // Link to class genesis, not latest
 
         // 2. Create the Layer 3 Student Chain
         const studentData = { 
@@ -240,7 +253,7 @@ class HierarchyManager {
             deptId: deptId,
             classId: classId
         };
-        const studentChain = new Blockchain(studentId, parentHash, studentData); // Genesis prev_hash MUST be the class chain's latest block hash
+        const studentChain = new Blockchain(studentId, parentHash, studentData); // Genesis prev_hash MUST be the class chain's genesis block hash
 
         classObj.students[studentId] = studentChain;
         this.saveState();
@@ -291,8 +304,9 @@ class HierarchyManager {
                     const classInternalValid = classObj.chain.isChainValid();
                     
                     // C. Validate Layer 2 Link: Class Chain Genesis link to Department Chain
-                    const expectedParentHash = deptObj.chain.getLatestBlock().hash;
-                    const classGenesisValid = classObj.chain.chain[0].prev_hash === expectedParentHash;
+                    // The class genesis block should link to the department genesis block (index 0)
+                    const deptGenesisHash = deptObj.chain.chain[0].hash;
+                    const classGenesisValid = classObj.chain.chain[0].prev_hash === deptGenesisHash;
                     
                     if (!classInternalValid || !classGenesisValid || !deptValid) {
                         // If Dept Chain is invalid, all its children are automatically compromised
@@ -312,8 +326,9 @@ class HierarchyManager {
                         const studentInternalValid = studentChain.isChainValid();
                         
                         // E. Validate Layer 3 Link: Student Chain Genesis link to Class Chain
-                        const expectedClassHash = classObj.chain.getLatestBlock().hash;
-                        const studentGenesisValid = studentChain.chain[0].prev_hash === expectedClassHash;
+                        // The student genesis block should link to the class genesis block (index 0)
+                        const classGenesisHash = classObj.chain.chain[0].hash;
+                        const studentGenesisValid = studentChain.chain[0].prev_hash === classGenesisHash;
                         
                         if (!studentInternalValid || !studentGenesisValid || !validationReport[deptId].classes[classId].valid) {
                             // If Class Chain is invalid (or its parent), all its children are automatically compromised
