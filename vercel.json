@@ -11,20 +11,14 @@
     }
   ],
   "routes": [
-    // 1. Serve the main homepage (index.html) directly from the static frontend folder.
     {
       "src": "/",
       "dest": "/frontend/index.html"
     },
-    // 2. Serve all other files within the frontend folder as static assets.
-    // This catches your image_5b6e42.png, any custom script.js, styles.css, etc.
-    // The regex (.*) matches the path, and :1 passes it to the destination.
     {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|html))$",
       "dest": "/frontend/$1"
     },
-    // 3. Catch-all: Route all remaining requests (e.g., /api/departments, /students)
-    // to your Node.js serverless function.
     {
       "src": "/(.*)",
       "dest": "/backend/index.js"
