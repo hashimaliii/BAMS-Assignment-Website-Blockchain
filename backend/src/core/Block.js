@@ -8,16 +8,16 @@ class Block {
      */
     constructor(index, transactions, prev_hash = '0') {
         this.index = index;
-        this.timestamp = Date.now(); // System time
-        this.transactions = transactions; // Data payload
-        this.prev_hash = prev_hash; // Previous block hash
-        this.nonce = 0; // Starts at 0, modified by PoW
-        this.hash = this.calculateBlockHash(); // Initial hash calculation
+        this.timestamp = Date.now(); // Mandatory field
+        this.transactions = transactions; // Mandatory field (data payload)
+        this.prev_hash = prev_hash; // Mandatory field (Previous block hash)
+        this.nonce = 0; // Mandatory field, modified by PoW
+        this.hash = this.calculateBlockHash(); // Mandatory field (Final SHA-256 result)
     }
 
     /**
      * Calculates the SHA-256 hash of the block.
-     * Must include: timestamp, transaction payload, previous hash, and nonce.
+     * Mandatory inclusion of: timestamp, transaction payload, previous hash, and nonce.
      * @returns {string} The computed hash.
      */
     calculateBlockHash() {
@@ -28,9 +28,8 @@ class Block {
 
     /**
      * Implements the simplified Proof of Work (PoW) mechanism.
-     * Repeatedly modifies the nonce until the resulting hash starts with "0000".
      */
-    mineBlock(difficulty = '0000') {
+    mineBlock(difficulty = '00') {
         console.log(`Mining block ${this.index}...`);
         
         while (this.hash.substring(0, difficulty.length) !== difficulty) {
@@ -42,5 +41,5 @@ class Block {
     }
 }
 
-// FIX: Use named export to prevent "is not a constructor" error
+// Use named export for consistency and reliability
 module.exports = { Block };

@@ -1,0 +1,665 @@
+{
+  "COMP": {
+    "chain": {
+      "chainId": "COMP",
+      "chain": [
+        {
+          "index": 0,
+          "timestamp": 1763198324853,
+          "transactions": {
+            "type": "DEPT_METADATA",
+            "id": "COMP",
+            "name": "School of Computing"
+          },
+          "prev_hash": "0",
+          "nonce": 262,
+          "hash": "00c3cd311f131f9ac3f5e1846a3f1d63bec31d9a9942519b27fa67db159fdd6d"
+        }
+      ],
+      "difficulty": "00",
+      "initialPrevHash": "0"
+    },
+    "classes": {
+      "COMP-C1": {
+        "chain": {
+          "chainId": "COMP-C1",
+          "chain": [
+            {
+              "index": 0,
+              "timestamp": 1763198324858,
+              "transactions": {
+                "type": "CLASS_METADATA",
+                "id": "COMP-C1",
+                "name": "Class 1",
+                "deptId": "COMP"
+              },
+              "prev_hash": "00c3cd311f131f9ac3f5e1846a3f1d63bec31d9a9942519b27fa67db159fdd6d",
+              "nonce": 24,
+              "hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+            }
+          ],
+          "difficulty": "00",
+          "initialPrevHash": "00c3cd311f131f9ac3f5e1846a3f1d63bec31d9a9942519b27fa67db159fdd6d"
+        },
+        "students": {
+          "COMP-C1-S01": {
+            "chainId": "COMP-C1-S01",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324860,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S01",
+                  "name": "Student 1 of COMP-C1",
+                  "rollNumber": 1001,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 69,
+                "hash": "006c300ff3385fd961bb5891f66bc8cddbd6b92148c55cf5dba5f446739c2f89"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S02": {
+            "chainId": "COMP-C1-S02",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324861,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S02",
+                  "name": "Student 2 of COMP-C1",
+                  "rollNumber": 1002,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 137,
+                "hash": "00ab05274aed0f2fb00ea35515d392cc326c28392a95f237ac52bd004a88cf65"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S03": {
+            "chainId": "COMP-C1-S03",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324864,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S03",
+                  "name": "Student 3 of COMP-C1",
+                  "rollNumber": 1003,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 194,
+                "hash": "00b04ab938d81e97c4dbd643fea8aa88aec71d06aecc15cca343cb383d2bfe65"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S04": {
+            "chainId": "COMP-C1-S04",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324866,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S04",
+                  "name": "Student 4 of COMP-C1",
+                  "rollNumber": 1004,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 671,
+                "hash": "000a0a392d7f8fda985323792229ceb7dddee84771f607897236c1b83dcc56ea"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S05": {
+            "chainId": "COMP-C1-S05",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324870,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S05",
+                  "name": "Student 5 of COMP-C1",
+                  "rollNumber": 1005,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 186,
+                "hash": "00922d9fcaa9760267b2f23b073263967d5166465b395354ad82525870e19530"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S06": {
+            "chainId": "COMP-C1-S06",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324872,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S06",
+                  "name": "Student 6 of COMP-C1",
+                  "rollNumber": 1006,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 349,
+                "hash": "0050e4a469f6d439e47dbedb65c79080bbdbc5945787b8a7fffded6a79509673"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S07": {
+            "chainId": "COMP-C1-S07",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324876,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S07",
+                  "name": "Student 7 of COMP-C1",
+                  "rollNumber": 1007,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 326,
+                "hash": "000a2adec68cc86e9ab8c39515d34cbf571396ea8c015c550cf192cca1b01795"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S08": {
+            "chainId": "COMP-C1-S08",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324881,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S08",
+                  "name": "Student 8 of COMP-C1",
+                  "rollNumber": 1008,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 165,
+                "hash": "006c80b9ed56db2fe93793494db3e5debb4bd98fa59a8336f00122cb9f5adedb"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S09": {
+            "chainId": "COMP-C1-S09",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324885,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S09",
+                  "name": "Student 9 of COMP-C1",
+                  "rollNumber": 1009,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 193,
+                "hash": "004dea8fc5e8dc93adc7132f04fe8218b521d53e78be947b4b8b249b24b44abd"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S10": {
+            "chainId": "COMP-C1-S10",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324888,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S10",
+                  "name": "Student 10 of COMP-C1",
+                  "rollNumber": 1010,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 255,
+                "hash": "00a08238cde050e8574f456dfd7c70aa67afd66b82cebe3f593267876a82531f"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S11": {
+            "chainId": "COMP-C1-S11",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324895,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S11",
+                  "name": "Student 11 of COMP-C1",
+                  "rollNumber": 1011,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 1339,
+                "hash": "009c32abc109cd00a02ad095f13a494a5ebecd46aa01ed8c630f3380f17d1a6d"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S12": {
+            "chainId": "COMP-C1-S12",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324904,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S12",
+                  "name": "Student 12 of COMP-C1",
+                  "rollNumber": 1012,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 216,
+                "hash": "00b4a079e78f69cbab625dcc4bc59a02fb6da2aa331803d56aec5a5f81f8454e"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S13": {
+            "chainId": "COMP-C1-S13",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324909,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S13",
+                  "name": "Student 13 of COMP-C1",
+                  "rollNumber": 1013,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 82,
+                "hash": "00c4a555c6f8fc0fa3417d3e930aa03ed7968b4c818a70428146a6775e493913"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S14": {
+            "chainId": "COMP-C1-S14",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324911,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S14",
+                  "name": "Student 14 of COMP-C1",
+                  "rollNumber": 1014,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 94,
+                "hash": "008e429d2ecdf4fd58254730269644218f3ae45e9221809d3c9a428430c9c250"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S15": {
+            "chainId": "COMP-C1-S15",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324912,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S15",
+                  "name": "Student 15 of COMP-C1",
+                  "rollNumber": 1015,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 11,
+                "hash": "002357d3183f42b76460372a98ef4ff0d44854e83246f7f9906da8d6d166ae9a"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S16": {
+            "chainId": "COMP-C1-S16",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324913,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S16",
+                  "name": "Student 16 of COMP-C1",
+                  "rollNumber": 1016,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 737,
+                "hash": "0032ef419b958603eea5855ee7610b72fb507cf2de13066db629e4b554dd2c32"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S17": {
+            "chainId": "COMP-C1-S17",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324918,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S17",
+                  "name": "Student 17 of COMP-C1",
+                  "rollNumber": 1017,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 222,
+                "hash": "002f2edd994ffd045a8823437d51f595108cb5ae62f1d047836581c368b6b8dc"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S18": {
+            "chainId": "COMP-C1-S18",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324920,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S18",
+                  "name": "Student 18 of COMP-C1",
+                  "rollNumber": 1018,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 349,
+                "hash": "0079a0d3eacff68051eb0045f6dbf4457ecfb95cd32076e3bc582b55f4d2f06e"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S19": {
+            "chainId": "COMP-C1-S19",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324925,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S19",
+                  "name": "Student 19 of COMP-C1",
+                  "rollNumber": 1019,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 256,
+                "hash": "00396f189ff3c15b708208677ef1a1f58b1dc3b26b79e6c0313e426a94e88aa6"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S20": {
+            "chainId": "COMP-C1-S20",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324930,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S20",
+                  "name": "Student 20 of COMP-C1",
+                  "rollNumber": 1020,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 186,
+                "hash": "00957fa5afc7b26cb0c17d2f54a450af5d7178132d4da5075a75cb1db7e92bac"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S21": {
+            "chainId": "COMP-C1-S21",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324932,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S21",
+                  "name": "Student 21 of COMP-C1",
+                  "rollNumber": 1021,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 60,
+                "hash": "0098dd049fbe68b3f23aa77a9e0bd6ad2a293c2f6095a9e39bcf2ea5cc2a9abd"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S22": {
+            "chainId": "COMP-C1-S22",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324935,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S22",
+                  "name": "Student 22 of COMP-C1",
+                  "rollNumber": 1022,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 17,
+                "hash": "009f0e59eee8f87ce9285a98a668ce97fb687b9f789c4a33ca4791aa2da3c89c"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S23": {
+            "chainId": "COMP-C1-S23",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324936,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S23",
+                  "name": "Student 23 of COMP-C1",
+                  "rollNumber": 1023,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 207,
+                "hash": "00860174aa37ed473adbd003c45d46ead4a7d6b29b28977fa4cf640749b9e0da"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S24": {
+            "chainId": "COMP-C1-S24",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324938,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S24",
+                  "name": "Student 24 of COMP-C1",
+                  "rollNumber": 1024,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 719,
+                "hash": "00bb66738a6b1ad3de7e660359afc32ac094353c158b548951eeab2253368b38"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S25": {
+            "chainId": "COMP-C1-S25",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324949,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S25",
+                  "name": "Student 25 of COMP-C1",
+                  "rollNumber": 1025,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 17,
+                "hash": "0015a475771516d8963c2e01a2253b0010b4350fb5a20b3d1d3e4d97ece1a40a"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S26": {
+            "chainId": "COMP-C1-S26",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324952,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S26",
+                  "name": "Student 26 of COMP-C1",
+                  "rollNumber": 1026,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 60,
+                "hash": "00318d5b490b5f67c40656bde7f232c6926dafe3680f0fd5b521a6116593d2b6"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          },
+          "COMP-C1-S27": {
+            "chainId": "COMP-C1-S27",
+            "chain": [
+              {
+                "index": 0,
+                "timestamp": 1763198324954,
+                "transactions": {
+                  "type": "STUDENT_METADATA",
+                  "id": "COMP-C1-S27",
+                  "name": "Student 27 of COMP-C1",
+                  "rollNumber": 1027,
+                  "deptId": "COMP",
+                  "classId": "COMP-C1"
+                },
+                "prev_hash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645",
+                "nonce": 512,
+                "hash": "00a0ac65693c74493e9cd894d4260fa708aeaca7e3bd7049286fffba8963f251"
+              }
+            ],
+            "difficulty": "00",
+            "initialPrevHash": "008f07c9bb0eb0832a0c3e81c5d1cdc158d9fb5088913dcc3ac2b3d6d6c14645"
+          }
+        }
+      }
+    }
+  },
+  "SE": {
+    "chain": {
+      "chainId": "SE",
+      "chain": [
+        {
+          "index": 0,
+          "timestamp": 1763198324857,
+          "transactions": {
+            "type": "DEPT_METADATA",
+            "id": "SE",
+            "name": "School of Software Engineering"
+          },
+          "prev_hash": "0",
+          "nonce": 65,
+          "hash": "00f87e633440bd14d0b8590f6eaef7c50662e2bce527b420a1eec3e75afd695b"
+        }
+      ],
+      "difficulty": "00",
+      "initialPrevHash": "0"
+    },
+    "classes": {}
+  }
+}

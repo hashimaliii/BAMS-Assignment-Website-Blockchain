@@ -1,131 +1,147 @@
-// BAMS/backend/src/controllers/studentController.js
+/**
+ * Handles GET request to retrieve all active students within a specified class.
+ */
+const viewAllStudents = (req, res, service) => {
+    try {
+        const { deptId, classId } = req.params;
+        const students = service.getAllActiveStudentsByClass(deptId.toUpperCase(), classId.toUpperCase());
+        res.status(200).json(students);
+    } catch (error) {
+        console.error("500 Error in viewAllStudents:", error.message, error.stack);
+        res.status(500).json({ error: 'Failed to retrieve students.', detail: error.message });
+    }
+};
 
-const studentService = require('../services/studentService');
-
-// --- Student CRUD Controllers ---
-
-const addStudent = (req, res) => {
+/**
+ * Handles POST request to create a new student under a class.
+ */
+const addStudent = (req, res, service) => {
     try {
         const { deptId, classId } = req.params;
         const { studentId, name, rollNumber } = req.body;
-        
+
         if (!studentId || !name || !rollNumber) {
             return res.status(400).json({ error: 'Student ID, Name, and Roll Number are required.' });
         }
-        
-        const newStudent = studentService.addStudent(
+
+        const newChain = service.addStudent(
             deptId.toUpperCase(), 
             classId.toUpperCase(), 
             studentId.toUpperCase(), 
             name, 
             rollNumber
         );
-
+        
         res.status(201).json({ 
-            message: `Student added. GENESIS block linked to Class ${classId}`, 
-            student: newStudent 
+            message: `Student ${studentId} added/updated in ${classId}.`, 
+            genesisHash: newChain.chain[0].hash 
         });
     } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-const viewAllStudents = (req, res) => {
-    try {
-        const { deptId, classId } = req.params;
-        // The service layer might be throwing an error here
-        const students = studentService.getAllActiveStudentsByClass(deptId.toUpperCase(), classId.toUpperCase());
-        res.status(200).json(students);
-    } catch (error) {
-        // THIS IS THE CRITICAL DEBUGGING LINE
-        console.error("500 Error in viewAllStudents:", error.message, error.stack);
-        // Report the specific error message back to the frontend
-        res.status(500).json({ 
-            error: 'Failed to retrieve students.',
-            detail: error.message // Show the specific message for debugging
-        });
+        console.error("500 Error in addStudent:", error.message, error.stack);
+        res.status(400).json({ error: error.message });
     }
 };
 
-const updateStudent = (req, res) => {
+/**
+ * Handles PUT request to update student metadata.
+ * Adds a new block to the Student Chain with updated fields[cite: 68, 70].
+ */
+const updateStudent = (req, res, service) => {
     try {
         const { deptId, classId, studentId } = req.params;
-        const updatedFields = req.body;
+        const updates = req.body; // e.g., { name: 'New Student Name', rollNumber: 100 }
 
-        const updatedStudent = studentService.updateStudent(
-            deptId.toUpperCase(), 
-            classId.toUpperCase(), 
-            studentId.toUpperCase(), 
-            updatedFields
-        );
-        res.status(200).json({ 
-            message: 'Student updated (new block appended)', 
-            student: updatedStudent 
+        if (!Object.keys(updates).length) {
+            return res.status(400).json({ error: 'No update fields provided.' });
+        }
+        
+        const newBlock = service.updateStudent(deptId.toUpperCase(), classId.toUpperCase(), studentId.toUpperCase(), updates);
+        
+        res.status(200).json({
+            message: `Student ${studentId} updated. New block added to chain.`,
+            newBlockHash: newBlock.hash,
         });
     } catch (error) {
-        res.status(404).json({ error: error.message });
+        console.error("500 Error in updateStudent:", error.message, error.stack);
+        res.status(400).json({ error: error.message });
     }
 };
 
-const deleteStudent = (req, res) => {
+/**
+ * Handles DELETE request.
+ * Adds a new block to the Student Chain with status: "deleted"[cite: 68, 69].
+ */
+const deleteStudent = (req, res, service) => {
     try {
         const { deptId, classId, studentId } = req.params;
-        studentService.deleteStudent(deptId.toUpperCase(), classId.toUpperCase(), studentId.toUpperCase());
-        res.status(200).json({ 
-            message: 'Student logically deleted (deletion block appended).'
+        
+        const newBlock = service.deleteStudent(deptId.toUpperCase(), classId.toUpperCase(), studentId.toUpperCase());
+        
+        res.status(200).json({
+            message: `Student ${studentId} marked as deleted. New block added to chain.`,
+            newBlockHash: newBlock.hash,
         });
     } catch (error) {
-        res.status(404).json({ error: error.message });
+        console.error("500 Error in deleteStudent:", error.message, error.stack);
+        res.status(400).json({ error: error.message });
     }
 };
 
-// --- Attendance Controllers ---
+// --- Attendance Module ---
 
-const markAttendance = (req, res) => {
+/**
+ * Handles POST request to mark attendance for a student.
+ */
+const markAttendance = (req, res, service) => {
     try {
         const { deptId, classId, studentId } = req.params;
         const { status } = req.body; // Expects 'Present', 'Absent', or 'Leave'
 
         if (!status) {
-            return res.status(400).json({ error: 'Attendance status is required.' });
+            return res.status(400).json({ error: 'Attendance status is required (Present, Absent, Leave).' });
         }
-        
-        const record = studentService.markAttendance(
+
+        const newBlock = service.markAttendance(
             deptId.toUpperCase(), 
             classId.toUpperCase(), 
             studentId.toUpperCase(), 
             status
         );
-
+        
         res.status(201).json({ 
-            message: `Attendance marked successfully. New block added to student's chain.`, 
-            record: record 
+            message: `Attendance marked for ${studentId}.`, 
+            status: status,
+            blockHash: newBlock.hash 
         });
     } catch (error) {
+        console.error("500 Error in markAttendance:", error.message, error.stack);
         res.status(400).json({ error: error.message });
     }
 };
 
-const viewAttendanceHistory = (req, res) => {
+/**
+ * Handles GET request to view a student's complete attendance history.
+ */
+const viewAttendanceHistory = (req, res, service) => {
     try {
         const { deptId, classId, studentId } = req.params;
-        const history = studentService.getStudentAttendanceHistory(
+        const history = service.getFullAttendanceHistory(
             deptId.toUpperCase(), 
             classId.toUpperCase(), 
             studentId.toUpperCase()
         );
-        
-        res.status(200).json({
-            message: `Attendance history for ${studentId}`,
-            history: history
-        });
+
+        res.status(200).json({ history });
     } catch (error) {
+        console.error("500 Error in viewAttendanceHistory:", error.message, error.stack);
         res.status(404).json({ error: error.message });
     }
 };
 
+
 module.exports = {
-    addStudent,
     viewAllStudents,
+    addStudent,
     updateStudent,
     deleteStudent,
     markAttendance,

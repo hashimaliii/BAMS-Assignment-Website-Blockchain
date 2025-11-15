@@ -3,16 +3,15 @@ const { Block } = require('./Block');
 class Blockchain {
     /**
      * @param {string} chainId - Identifier for the specific chain.
-     * @param {string} initialPrevHash - Expected hash of the parent chain's latest block.
+     * @param {string} initialPrevHash - Expected hash of the parent chain's latest block (for hierarchical linkage).
      * @param {Object} genesisData - The metadata for the first block.
      */
     constructor(chainId, initialPrevHash = '0', genesisData = {}) {
         this.chainId = chainId;
         this.chain = [];
-        this.difficulty = '00'; // Target PoW requirement
-        this.initialPrevHash = initialPrevHash; // Stores the hash required for hierarchical linkage
+        this.difficulty = '00'; // Set to '00' for quick startup; change to '0000' for higher security/difficulty
+        this.initialPrevHash = initialPrevHash; // Stores the parent chain hash required for linkage
 
-        // Creates and mines the genesis block
         this.createGenesisBlock(genesisData);
     }
 
@@ -20,6 +19,7 @@ class Blockchain {
      * Creates the very first block in the chain (index 0).
      */
     createGenesisBlock(data) {
+        // The genesis block uses the initialPrevHash (parent hash) passed in the constructor
         const genesisBlock = new Block(0, data, this.initialPrevHash);
         genesisBlock.mineBlock(this.difficulty); 
         this.chain.push(genesisBlock);
@@ -49,16 +49,13 @@ class Blockchain {
 
     /**
      * Checks if the chain is valid internally: PoW, Hashing, and Prev_hash linking.
-     * Also checks the critical hierarchical link for the genesis block.
+     * NOTE: This does NOT check the hierarchical link; that's done by HierarchyManager.
      */
     isChainValid() {
-        // Check the critical hierarchical link first (for Layer 2/3 chains)
-        // If the genesis prev_hash doesn't match the expected parent hash, the chain is invalid.
-        if (this.chain.length > 0 && this.initialPrevHash !== '0') {
-            if (this.chain[0].prev_hash !== this.initialPrevHash) {
-                console.error(`Chain ${this.chainId}: Genesis link to parent chain is broken. Expected ${this.initialPrevHash.substring(0, 10)}..., got ${this.chain[0].prev_hash.substring(0, 10)}...`);
-                return false;
-            }
+        // Check the genesis block's internal integrity first
+        const genesisBlock = this.chain[0];
+        if (!genesisBlock.hash.startsWith(this.difficulty) || genesisBlock.hash !== genesisBlock.calculateBlockHash()) {
+            return false;
         }
 
         // Iterate through all blocks starting from the second one (index 1)
@@ -84,10 +81,9 @@ class Blockchain {
                 return false;
             }
         }
-
         return true;
     }
 }
 
-// FIX: Use named export to prevent "is not a constructor" error
+// Use named export for consistency and reliability
 module.exports = { Blockchain };

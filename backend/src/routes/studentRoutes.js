@@ -1,28 +1,32 @@
-// BAMS/backend/src/routes/studentRoutes.js
-
 const express = require('express');
-// mergeParams needed to access :deptId and :classId from parent routes
-const router = express.Router({ mergeParams: true }); 
 const studentController = require('../controllers/studentController');
+const studentServiceFactory = require('../services/studentService');
 
-// --- Student CRUD ---
-// GET /api/departments/:deptId/classes/:classId/students - View all active students in a class
-router.get('/', studentController.viewAllStudents);
+// CRITICAL FIX: Export a function that creates the router and injects the manager
+module.exports = (bamsManager) => {
+    // Merge params is necessary to get :deptId and :classId from parent routers
+    const router = express.Router({ mergeParams: true }); 
+    
+    // Instantiate the service with the correct manager instance
+    const service = studentServiceFactory(bamsManager);
 
-// POST /api/departments/:deptId/classes/:classId/students - Add new student (genesis block)
-router.post('/', studentController.addStudent);
+    // GET /api/.../students - View all students in a class
+    router.get('/', (req, res) => studentController.viewAllStudents(req, res, service));
+    
+    // POST /api/.../students - Create a new student
+    router.post('/', (req, res) => studentController.addStudent(req, res, service));
 
-// PUT /api/departments/:deptId/classes/:classId/students/:studentId - Update student metadata
-router.put('/:studentId', studentController.updateStudent);
+    // PUT /api/.../students/:studentId - Update student metadata
+    router.put('/:studentId', (req, res) => studentController.updateStudent(req, res, service));
+    
+    // DELETE /api/.../students/:studentId - Mark student as deleted
+    router.delete('/:studentId', (req, res) => studentController.deleteStudent(req, res, service));
 
-// DELETE /api/departments/:deptId/classes/:classId/students/:studentId - Logically delete student
-router.delete('/:studentId', studentController.deleteStudent);
+    // POST /api/.../students/:studentId/attendance - Mark attendance (adds a block)
+    router.post('/:studentId/attendance', (req, res) => studentController.markAttendance(req, res, service));
 
-// --- Attendance Management ---
-// POST /api/departments/:deptId/classes/:classId/students/:studentId/attendance - Mark attendance
-router.post('/:studentId/attendance', studentController.markAttendance);
-
-// GET /api/departments/:deptId/classes/:classId/students/:studentId/attendance - View attendance history
-router.get('/:studentId/attendance', studentController.viewAttendanceHistory);
-
-module.exports = router;
+    // GET /api/.../students/:studentId/history - View student's full attendance history
+    router.get('/:studentId/history', (req, res) => studentController.viewAttendanceHistory(req, res, service));
+    
+    return router;
+};

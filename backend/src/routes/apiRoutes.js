@@ -1,24 +1,29 @@
 const express = require('express');
-const router = express.Router();
 
-// Import all controllers and routers
+// Import sub-route factories and services
 const departmentRoutes = require('./departmentRoutes');
 const classRoutes = require('./classRoutes'); 
 const studentRoutes = require('./studentRoutes'); 
-const bamsController = require('../controllers/bamsController'); // New controller
+const bamsServiceFactory = require('../services/bamsService');
+const bamsController = require('../controllers/bamsController');
 
-// --- Main Validation Route ---
-// GET /api/validate
-router.get('/validate', bamsController.validateSystemIntegrity);
-
-// --- CRUD Routes ---
-// Department (Layer 1)
-router.use('/departments', departmentRoutes);
-
-// Class (Layer 2)
-router.use('/departments/:deptId/classes', classRoutes);
-
-// Student (Layer 3 & Attendance)
-router.use('/departments/:deptId/classes/:classId/students', studentRoutes);
-
-module.exports = router;
+// CRITICAL FIX: Export a function that accepts the manager instance
+module.exports = (bamsManager) => {
+    const router = express.Router();
+    
+    // Pass the manager instance to all sub-router factories
+    router.use('/departments', departmentRoutes(bamsManager));
+    
+    // Nested routes for Class (requires :deptId) and Student (requires :deptId/:classId)
+    router.use('/departments/:deptId/classes', classRoutes(bamsManager));
+    router.use('/departments/:deptId/classes/:classId/students', studentRoutes(bamsManager));
+    
+    // Instantiate BAMS service for the validation controller
+    const bamsService = bamsServiceFactory(bamsManager);
+    
+    // BAMS System Routes
+    // Validation route does not need params, just access to the hierarchy manager
+    router.get('/validate', (req, res) => bamsController.validateSystemIntegrity(req, res, bamsService));
+    
+    return router;
+};

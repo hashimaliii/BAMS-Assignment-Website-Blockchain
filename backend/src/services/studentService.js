@@ -1,203 +1,118 @@
-// BAMS/backend/src/services/studentService.js
+// Export a factory function that accepts the HierarchyManager instance
+module.exports = (Hierarchy) => {
+    return {
+        // --- READ: Retrieve all active students in a class ---
+        getAllActiveStudentsByClass: (deptId, classId) => {
+            const classObj = Hierarchy.departments[deptId]?.classes[classId];
+            if (!classObj) throw new Error(`Class ${classId} not found in ${deptId}.`);
 
-const { HierarchyManager } = require('../core/HierarchyManager');
-const Hierarchy = new HierarchyManager(); 
-const classService = require('./classService');
-
-class StudentService {
-
-    /**
-     * Finds the latest, non-deleted metadata for a student.
-     * Metadata is stored in the student's chain (Layer 3).
-     * @returns {Object|null} The latest student metadata or null if not found/deleted.
-     */
-    getCurrentStudentMetadata(deptId, classId, studentId) {
-        const studentChain = Hierarchy.getStudentChain(deptId, classId, studentId);
-        if (!studentChain) {
-            return null;
-        }
-
-        // Iterate backward to find the most recent non-deleted status
-        for (let i = studentChain.chain.length - 1; i >= 0; i--) {
-            const block = studentChain.chain[i];
-            const transactions = block.transactions;
-
-            // 1. Look for the latest metadata update
-            if (transactions.type === 'STUDENT_METADATA') {
-                // 2. Check logical deletion status
-                if (transactions.status === 'deleted') {
-                    return null; 
+            const students = classObj.students;
+            return Object.keys(students).map(studentId => {
+                const chain = students[studentId];
+                const latestTransaction = chain.getLatestBlock().transactions;
+                
+                if (latestTransaction.status === 'deleted') {
+                    return null;
                 }
                 
-                // Return the latest active metadata block
+                // Student metadata is primarily in the genesis block
+                const initialMetadata = chain.chain[0].transactions;
+                
                 return {
-                    id: transactions.id,
-                    name: transactions.name,
-                    rollNumber: transactions.rollNumber,
-                    deptId: transactions.deptId,
-                    classId: transactions.classId,
-                    createdAt: block.timestamp,
-                    currentHash: block.hash
+                    id: studentId,
+                    name: latestTransaction.name || initialMetadata.name,
+                    rollNumber: latestTransaction.rollNumber || initialMetadata.rollNumber,
+                    deptId: deptId,
+                    classId: classId,
+                    currentHash: chain.getLatestBlock().hash
                 };
+            }).filter(student => student !== null);
+        },
+
+        // --- CREATE: Add a new student chain ---
+        addStudent: (deptId, classId, studentId, name, rollNumber) => {
+            if (Hierarchy.getStudentChain(deptId, classId, studentId)) {
+                throw new Error(`Student ${studentId} already exists in ${classId}. Use PUT to update.`);
             }
-        }
-        return null;
-    }
-
-    /**
-     * Creates a new student, enforcing the Layer 3 linkage rule.
-     * @returns {Object} The newly created student metadata.
-     */
-    addStudent(deptId, classId, studentId, name, rollNumber) {
-        // 1. Check if the parent class exists and is active
-        if (!classService.getCurrentClassMetadata(deptId, classId)) {
-            throw new Error(`Cannot create student. Parent Class ${classId} not found or is deleted.`);
-        }
+            return Hierarchy.addStudent(deptId, classId, studentId, name, rollNumber);
+        },
         
-        // 2. Check for duplicate student ID (roll number uniqueness is also a good practice)
-        if (this.getCurrentStudentMetadata(deptId, classId, studentId)) {
-            throw new Error(`Student ${studentId} already exists in Class ${classId}.`);
-        }
-
-        // 3. HierarchyManager handles the creation of the Layer 3 GENESIS block,
-        // using the class's latest hash as its prev_hash.
-        Hierarchy.addStudent(deptId, classId, studentId, name, rollNumber);
-        
-        return this.getCurrentStudentMetadata(deptId, classId, studentId);
-    }
-
-    /**
-     * Lists all active students under a specific class.
-     * @returns {Array} List of current student metadata objects.
-     */
-    getAllActiveStudentsByClass(deptId, classId) {
-        const classObj = Hierarchy.departments[deptId]?.classes[classId];
-        if (!classObj) return []; 
-        
-        const activeStudents = [];
-        
-        for (const studentId in classObj.students) {
-            const metadata = this.getCurrentStudentMetadata(deptId, classId, studentId);
-            if (metadata) {
-                activeStudents.push(metadata);
+        // --- UPDATE: Add a block with updated metadata ---
+        updateStudent: (deptId, classId, studentId, updates) => {
+            const studentChain = Hierarchy.getStudentChain(deptId, classId, studentId);
+            if (!studentChain) {
+                throw new Error(`Student ${studentId} not found.`);
             }
-        }
+            
+            const transaction = { 
+                type: 'STUDENT_UPDATE', 
+                id: studentId,
+                timestamp: Date.now(),
+                ...updates 
+            };
 
-        return activeStudents;
-    }
-
-    /**
-     * Updates student metadata by appending a NEW block (immutability rule).
-     * @returns {Object} The new current student metadata.
-     */
-    updateStudent(deptId, classId, studentId, updatedFields) {
-        const studentChain = Hierarchy.getStudentChain(deptId, classId, studentId);
-        if (!studentChain) {
-            throw new Error(`Student ${studentId} not found.`);
-        }
+            const newBlock = studentChain.addBlock(transaction);
+            Hierarchy.saveState(Hierarchy.departments);
+            return newBlock;
+        },
         
-        const currentMetadata = this.getCurrentStudentMetadata(deptId, classId, studentId);
-        if (!currentMetadata) {
-             throw new Error('Student is logically deleted and cannot be updated.');
-        }
+        // --- DELETE: Add a block marking the student as deleted ---
+        deleteStudent: (deptId, classId, studentId) => {
+            const studentChain = Hierarchy.getStudentChain(deptId, classId, studentId);
+            if (!studentChain) {
+                throw new Error(`Student ${studentId} not found.`);
+            }
 
-        // Combine current data with new updates, preserving core structure
-        const newMetadata = {
-            ...currentMetadata,
-            ...updatedFields,
-            type: 'STUDENT_METADATA',
-            status: 'active' 
-        };
+            const transaction = { 
+                type: 'STUDENT_DELETE', 
+                id: studentId,
+                timestamp: Date.now(),
+                status: 'deleted' 
+            };
+
+            const newBlock = studentChain.addBlock(transaction);
+            Hierarchy.saveState(Hierarchy.departments);
+            return newBlock;
+        },
+
+        // --- ATTENDANCE MODULE ---
         
-        // Append a new block with the updated fields.
-        studentChain.addBlock(newMetadata);
-        
-        return this.getCurrentStudentMetadata(deptId, classId, studentId);
-    }
+        // --- CREATE: Mark attendance (adds a block) ---
+        markAttendance: (deptId, classId, studentId, status) => {
+            const studentChain = Hierarchy.getStudentChain(deptId, classId, studentId);
+            if (!studentChain) {
+                throw new Error(`Student ${studentId} not found.`);
+            }
+            
+            const attendanceTransaction = {
+                type: 'ATTENDANCE_RECORD',
+                studentId: studentId,
+                date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+                status: status, // Present, Absent, or Leave
+            };
+            
+            const newBlock = studentChain.addBlock(attendanceTransaction);
+            Hierarchy.saveState(Hierarchy.departments);
+            return newBlock;
+        },
 
-    /**
-     * Logically "deletes" a student by appending a NEW block with status: "deleted".
-     */
-    deleteStudent(deptId, classId, studentId) {
-        const studentChain = Hierarchy.getStudentChain(deptId, classId, studentId);
-        if (!studentChain) {
-            throw new Error(`Student ${studentId} not found.`);
+        // --- READ: Retrieve full attendance history ---
+        getFullAttendanceHistory: (deptId, classId, studentId) => {
+            const studentChain = Hierarchy.getStudentChain(deptId, classId, studentId);
+            if (!studentChain) {
+                throw new Error(`Student ${studentId} not found.`);
+            }
+            
+            // Filter to show only the attendance blocks (index > 0)
+            return studentChain.chain
+                .filter(block => block.index > 0 && block.transactions.type === 'ATTENDANCE_RECORD')
+                .map(block => ({
+                    index: block.index,
+                    timestamp: block.timestamp,
+                    date: block.transactions.date,
+                    status: block.transactions.status,
+                    hash: block.hash
+                }));
         }
-
-        if (!this.getCurrentStudentMetadata(deptId, classId, studentId)) {
-            return true; // Already logically deleted
-        }
-
-        const deletionPayload = {
-            type: 'STUDENT_METADATA',
-            id: studentId,
-            deptId: deptId,
-            classId: classId,
-            status: 'deleted' 
-        };
-
-        // Append the new block to the Student Blockchain
-        studentChain.addBlock(deletionPayload);
-        
-        return true;
-    }
-
-    // --- CORE ATTENDANCE LOGIC (Adding Transaction Blocks) ---
-
-    /**
-     * Marks attendance for a student by appending a new block transaction.
-     * @param {string} status - 'Present', 'Absent', or 'Leave'.
-     */
-    markAttendance(deptId, classId, studentId, status) {
-        const studentChain = Hierarchy.getStudentChain(deptId, classId, studentId);
-        const studentData = this.getCurrentStudentMetadata(deptId, classId, studentId);
-        
-        if (!studentChain || !studentData) {
-            throw new Error(`Student ${studentId} not found or is not active.`);
-        }
-        
-        if (!['Present', 'Absent', 'Leave'].includes(status)) {
-            throw new Error('Invalid attendance status. Must be Present, Absent, or Leave.');
-        }
-
-        const attendancePayload = {
-            type: 'ATTENDANCE_RECORD',
-            studentId: studentId,
-            classId: classId,
-            date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-            time: new Date().toLocaleTimeString(),
-            status: status
-        };
-
-        // Every attendance record becomes a BLOCK inside the student blockchain.
-        studentChain.addBlock(attendancePayload);
-        
-        return attendancePayload;
-    }
-
-    /**
-     * Retrieves all attendance blocks (transaction type 'ATTENDANCE_RECORD') for a student.
-     */
-    getStudentAttendanceHistory(deptId, classId, studentId) {
-        const studentChain = Hierarchy.getStudentChain(deptId, classId, studentId);
-        if (!studentChain) {
-            throw new Error(`Student ${studentId} not found.`);
-        }
-
-        // Filter out the genesis block (index 0) and metadata blocks
-        const history = studentChain.chain
-            .filter(block => block.transactions.type === 'ATTENDANCE_RECORD')
-            .map(block => ({
-                index: block.index,
-                date: block.transactions.date,
-                status: block.transactions.status,
-                timestamp: block.timestamp,
-                hash: block.hash,
-                prev_hash: block.prev_hash
-            }));
-
-        return history;
-    }
-}
-
-module.exports = new StudentService();
+    };
+};

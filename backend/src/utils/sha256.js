@@ -1,17 +1,15 @@
 const crypto = require('crypto');
 
 /**
- * Computes the SHA-256 hash of the input string.
- * This is the mandatory hashing algorithm for the blockchain.
- * @param {string} data The combined data string (timestamp, transactions, prev_hash, nonce, etc.)
- * @returns {string} The computed hash string (hexadecimal).
+ * Calculates the SHA-256 hash for a given string input.
+ * This function is used by the Block class.
+ * @param {string} input - The concatenated data string (timestamp + transactions + prev_hash + nonce).
+ * @returns {string} The resulting SHA-256 hash in hexadecimal format.
  */
-const calculateHash = (data) => {
-    // The createHash, update, and digest steps compute the final SHA-256 hash.
-    return crypto.createHash('sha256').update(data).digest('hex');
-};
+function calculateHash(input) {
+    return crypto.createHash('sha256').update(input).digest('hex');
+}
 
-// Use named export for consistency
 module.exports = {
-    calculateHash
+    calculateHash,
 };
