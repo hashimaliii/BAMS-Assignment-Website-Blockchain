@@ -1187,18 +1187,18 @@
             let xOffset = -150;
 
             for (const dept of departments) {
-                console.log('[3D] Processing department:', dept.id);
+                console.log('[3D] Processing department:', dept.name);
                 // Create department node
                 const deptNode = createSphere(xOffset, yOffset, 0, 20, 0x00aa00); // Green
-                nodeObjects[`dept-${dept.id}`] = deptNode;
-                const deptLabel = createTextSprite(dept.id, 0xffffff);
+                nodeObjects[`dept-${dept.name}`] = deptNode;
+                const deptLabel = createTextSprite(dept.name, 0xffffff);
                 deptLabel.position.copy(deptNode.position);
                 deptLabel.position.y += 30;
                 scene.add(deptLabel);
 
                 // Fetch classes for this department
                 const classesData = await fetchData(`${API_BASE_URL}/departments/${dept.id}/classes`);
-                console.log('[3D] Classes for', dept.id, ':', classesData);
+                console.log('[3D] Classes for', dept.name, ':', classesData);
                 
                 // Check if classesData is an array or has a classes property
                 const classes = Array.isArray(classesData) ? classesData : (classesData?.classes || []);
@@ -1209,21 +1209,21 @@
 
                     for (let i = 0; i < classes.length; i++) {
                         const cls = classes[i];
-                        console.log('[3D] Processing class:', cls.id);
+                        console.log('[3D] Processing class:', cls.name);
                         const classNode = createSphere(classXOffset, classYOffset, 50, 15, 0x0066ff); // Blue
-                        nodeObjects[`class-${cls.id}`] = classNode;
+                        nodeObjects[`class-${cls.name}`] = classNode;
 
                         // Draw line from dept to class
                         drawLine(deptNode.position, classNode.position, 0x888888);
 
-                        const classLabel = createTextSprite(cls.id.substring(0, 8), 0xffffff);
+                        const classLabel = createTextSprite(cls.name.substring(0, 8), 0xffffff);
                         classLabel.position.copy(classNode.position);
                         classLabel.position.y += 25;
                         scene.add(classLabel);
 
                         // Fetch students for this class
                         const studentsData = await fetchData(`${API_BASE_URL}/departments/${dept.id}/classes/${cls.id}/students`);
-                        console.log('[3D] Students for', cls.id, ':', studentsData);
+                        console.log('[3D] Students for', cls.name, ':', studentsData);
                         
                         // Check if studentsData is an array or has a students property
                         const students = Array.isArray(studentsData) ? studentsData : (studentsData?.students || []);
@@ -1235,12 +1235,12 @@
                             for (let j = 0; j < Math.min(students.length, 5); j++) {
                                 const student = students[j];
                                 const studentNode = createSphere(studentXOffset + j * 30, studentYOffset, 100, 10, 0xff9933); // Orange
-                                nodeObjects[`student-${student.id}`] = studentNode;
+                                nodeObjects[`student-${student.name}`] = studentNode;
 
                                 // Draw line from class to student
                                 drawLine(classNode.position, studentNode.position, 0x666666);
 
-                                const studentLabel = createTextSprite(student.id.substring(0, 5), 0xffffff);
+                                const studentLabel = createTextSprite(student.name.substring(0, 5), 0xffffff);
                                 studentLabel.position.copy(studentNode.position);
                                 studentLabel.position.y += 15;
                                 scene.add(studentLabel);
