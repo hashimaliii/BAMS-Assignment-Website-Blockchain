@@ -196,3 +196,5 @@ server.on('clientError', (err, socket) => {
 });
 
 console.log('[PROCESS] Server startup complete. Waiting for requests...');
+
+export default app;
