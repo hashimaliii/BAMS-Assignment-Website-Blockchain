@@ -135,6 +135,11 @@
                     </p>
                 </div>
             </div>
+
+            <!-- Validation View -->
+            <div id="validation-view" class="hidden">
+                <div id="content"></div>
+            </div>
         </div>
     </div>
 
@@ -326,6 +331,7 @@
             document.getElementById('list-view').classList.remove('hidden');
             document.getElementById('history-view').classList.add('hidden');
             document.getElementById('hierarchy3d-view').classList.add('hidden');
+            document.getElementById('validation-view').classList.add('hidden');
             
             document.getElementById('list-view').innerHTML = '';
             
@@ -363,6 +369,11 @@
                         container.removeChild(container.firstChild);
                     }
                     setTimeout(() => init3DVisualization(), 100);
+                    break;
+                case 'validation':
+                    document.getElementById('current-view-title').textContent = 'System Integrity Validation Report';
+                    document.getElementById('list-view').classList.add('hidden');
+                    document.getElementById('validation-view').classList.remove('hidden');
                     break;
             }
             updateBreadcrumbs();
@@ -1055,17 +1066,141 @@
             document.getElementById('validation-btn').disabled = false;
 
             if (data) {
-                if (data.status === 'VALID') {
-                    showMessage('success', data.message, "Full report available in console.");
-                } else if (data.status === 'INVALID') {
-                    // Assuming the backend sends status: 'INVALID' and a report on failure
-                    showMessage('error', data.message, "Check the console for a detailed report on the compromised chains.");
-                }
-                console.log("--- BAMS Validation Report ---");
-                console.log(data.report);
-                console.log("--- End Report ---");
+                setView('validation');
+                displayValidationView(data);
             }
         });
+
+        function displayValidationView(data) {
+            const report = data.report;
+            const overallValid = data.status === 'VALID';
+            
+            let html = `
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <div class="mb-6 flex items-center gap-4">
+                        <h2 class="text-2xl font-bold">System Integrity Validation Report</h2>
+                        <div class="px-4 py-2 rounded-lg font-semibold ${overallValid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                            ${overallValid ? '✅ VALID' : '❌ INVALID'}
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                        <p class="text-blue-900">${data.message || 'System validation complete.'}</p>
+                    </div>
+            `;
+
+            // Display each department and its chains
+            for (const deptId in report) {
+                const dept = report[deptId];
+                const deptValid = dept.valid;
+                
+                html += `
+                    <div class="border-2 border-gray-200 rounded-lg p-4 mb-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <h3 class="text-xl font-bold text-gray-800">${dept.name || deptId}</h3>
+                            <span class="px-3 py-1 rounded-full text-sm font-semibold ${deptValid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                ${deptValid ? '✅ VALID' : '❌ INVALID'}
+                            </span>
+                        </div>
+                        
+                        <div class="mb-4 bg-gray-50 p-3 rounded">
+                            <p class="text-sm font-semibold text-gray-700 mb-2">Department Chain (Layer 1) - ${dept.blocks?.length || 0} blocks</p>
+                            ${renderBlockChain(dept.blocks)}
+                        </div>
+                `;
+
+                // Classes
+                for (const classId in dept.classes) {
+                    const cls = dept.classes[classId];
+                    const classValid = cls.valid;
+                    
+                    html += `
+                        <div class="ml-4 border-l-4 border-blue-300 pl-4 mb-4">
+                            <div class="flex items-center gap-3 mb-3">
+                                <h4 class="text-lg font-bold text-gray-700">${cls.name || classId}</h4>
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold ${classValid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                    ${classValid ? '✅' : '❌'}
+                                </span>
+                            </div>
+                            ${cls.reason ? `<p class="text-xs text-red-600 mb-2">⚠️ ${cls.reason}</p>` : ''}
+                            
+                            <div class="bg-gray-50 p-2 rounded mb-3">
+                                <p class="text-xs font-semibold text-gray-700 mb-2">Class Chain (Layer 2) - ${cls.blocks?.length || 0} blocks</p>
+                                ${renderBlockChain(cls.blocks, true)}
+                            </div>
+                    `;
+
+                    // Students
+                    for (const studentId in cls.students) {
+                        const student = cls.students[studentId];
+                        const studentValid = student.valid;
+                        
+                        html += `
+                            <div class="ml-4 border-l-2 border-orange-300 pl-3 mb-3 bg-orange-50 p-2 rounded">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-sm font-bold text-gray-700">${student.name || studentId}</span>
+                                    <span class="px-2 py-1 rounded text-xs font-semibold ${studentValid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                        ${studentValid ? '✅' : '❌'}
+                                    </span>
+                                </div>
+                                ${student.reason ? `<p class="text-xs text-red-600 mb-2">⚠️ ${student.reason}</p>` : ''}
+                                <div class="text-xs">
+                                    <p class="text-gray-600 mb-1">Student Chain (Layer 3) - ${student.blocks?.length || 0} blocks</p>
+                                    ${renderBlockChain(student.blocks, false, true)}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    html += `</div>`;
+                }
+                
+                html += `</div>`;
+            }
+
+            html += `
+                    <button onclick="setView('departments')" class="mt-6 bg-blue-600 text-white hover:bg-blue-700 px-6 py-2 rounded-lg font-semibold">
+                    ← Back to Home
+                </button>
+                </div>
+            `;
+            
+            document.getElementById('content').innerHTML = html;
+            updateBreadcrumbs([]);
+        }
+
+        function renderBlockChain(blocks, isCompact = false, isStudent = false) {
+            if (!blocks || blocks.length === 0) return '<p class="text-gray-500 text-xs">No blocks</p>';
+            
+            let html = '<div class="flex flex-wrap gap-2">';
+            
+            blocks.forEach((block, idx) => {
+                const isValid = block.valid;
+                if (isCompact) {
+                    html += `
+                        <div class="flex flex-col items-center gap-1">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold cursor-pointer hover:shadow-md transition-all ${isValid ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'}" title="Block ${block.index}: ${isValid ? 'Valid' : 'Invalid'}">
+                                ${block.index}
+                            </div>
+                            <span class="text-xs text-gray-600">${isValid ? '✓' : '✗'}</span>
+                        </div>
+                    `;
+                } else {
+                    const truncHash = block.hash ? block.hash.substring(0, 8) : 'N/A';
+                    const truncPrevHash = block.prev_hash ? block.prev_hash.substring(0, 8) : 'N/A';
+                    html += `
+                        <div class="text-xs border rounded px-2 py-1 ${isValid ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}">
+                            <strong>#${block.index}</strong> ${isValid ? '✅' : '❌'}<br/>
+                            H: ${truncHash}...<br/>
+                            P: ${truncPrevHash}...<br/>
+                            Nonce: ${block.nonce}
+                        </div>
+                    `;
+                }
+            });
+            
+            html += '</div>';
+            return html;
+        }
 
         // --- 3D Hierarchy Visualization ---
         let scene, camera, renderer, controls;

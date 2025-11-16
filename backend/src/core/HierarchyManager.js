@@ -287,54 +287,143 @@ class HierarchyManager {
 
             for (const deptId in this.departments) {
                 const deptObj = this.departments[deptId];
-                validationReport[deptId] = { valid: true, classes: {} };
-
+                const deptName = deptObj.name || deptId;
+                
                 // A. Validate Layer 1: Department Chain (Internal Check)
                 const deptValid = deptObj.chain.isChainValid();
-                validationReport[deptId].valid = deptValid;
+                
+                // Build blocks array with per-block validation
+                const deptBlocks = deptObj.chain.chain.map((block, idx) => {
+                    let blockValid = true;
+                    if (idx === 0) {
+                        // Genesis block - check if hash matches its computed value
+                        blockValid = block.hash === block.calculateBlockHash();
+                    } else {
+                        // Regular block - check linkage and hash
+                        blockValid = (block.prev_hash === deptObj.chain.chain[idx - 1].hash) && 
+                                    (block.hash === block.calculateBlockHash());
+                    }
+                    return {
+                        index: block.index,
+                        hash: block.hash,
+                        prev_hash: block.prev_hash,
+                        valid: blockValid,
+                        timestamp: block.timestamp,
+                        nonce: block.nonce
+                    };
+                });
+                
+                validationReport[deptId] = { 
+                    name: deptName,
+                    valid: deptValid, 
+                    blocks: deptBlocks,
+                    classes: {} 
+                };
+                
                 if (!deptValid) {
                     overallValid = false;
                 }
 
                 for (const classId in deptObj.classes) {
                     const classObj = deptObj.classes[classId];
-                    validationReport[deptId].classes[classId] = { valid: true, students: {} };
+                    const className = classObj.name || classId;
 
                     // B. Validate Layer 2: Class Chain (Internal Check)
                     const classInternalValid = classObj.chain.isChainValid();
                     
                     // C. Validate Layer 2 Link: Class Chain Genesis link to Department Chain
-                    // The class genesis block should link to the department genesis block (index 0)
                     const deptGenesisHash = deptObj.chain.chain[0].hash;
                     const classGenesisValid = classObj.chain.chain[0].prev_hash === deptGenesisHash;
                     
+                    // Build class blocks array with per-block validation
+                    const classBlocks = classObj.chain.chain.map((block, idx) => {
+                        let blockValid = true;
+                        if (idx === 0) {
+                            // Genesis block - should link to dept genesis
+                            blockValid = (block.prev_hash === deptGenesisHash) && 
+                                        (block.hash === block.calculateBlockHash());
+                        } else {
+                            // Regular block
+                            blockValid = (block.prev_hash === classObj.chain.chain[idx - 1].hash) && 
+                                        (block.hash === block.calculateBlockHash());
+                        }
+                        return {
+                            index: block.index,
+                            hash: block.hash,
+                            prev_hash: block.prev_hash,
+                            valid: blockValid,
+                            timestamp: block.timestamp,
+                            nonce: block.nonce
+                        };
+                    });
+                    
                     if (!classInternalValid || !classGenesisValid || !deptValid) {
-                        // If Dept Chain is invalid, all its children are automatically compromised
                         overallValid = false;
-                        validationReport[deptId].classes[classId].valid = false;
-                        validationReport[deptId].classes[classId].reason = `Internal: ${classInternalValid ? 'OK' : 'FAIL'}, Link: ${classGenesisValid ? 'OK' : 'FAIL'}, Parent Dept: ${deptValid ? 'OK' : 'COMPROMISED'}`;
+                        validationReport[deptId].classes[classId] = {
+                            name: className,
+                            valid: false,
+                            blocks: classBlocks,
+                            reason: `Internal: ${classInternalValid ? 'OK' : 'FAIL'}, Link: ${classGenesisValid ? 'OK' : 'FAIL'}, Parent Dept: ${deptValid ? 'OK' : 'COMPROMISED'}`,
+                            students: {}
+                        };
                     } else {
-                        validationReport[deptId].classes[classId].valid = true;
+                        validationReport[deptId].classes[classId] = {
+                            name: className,
+                            valid: true,
+                            blocks: classBlocks,
+                            students: {}
+                        };
                     }
 
                     // E. Check Student Chains
                     for (const studentId in classObj.students) {
                         const studentChain = classObj.students[studentId];
-                        validationReport[deptId].classes[classId].students[studentId] = { valid: true };
+                        const studentName = studentChain.chain[0].data?.student_name || studentId;
 
                         // D. Validate Layer 3: Student Chain (Internal Check)
                         const studentInternalValid = studentChain.isChainValid();
                         
                         // E. Validate Layer 3 Link: Student Chain Genesis link to Class Chain
-                        // The student genesis block should link to the class genesis block (index 0)
                         const classGenesisHash = classObj.chain.chain[0].hash;
                         const studentGenesisValid = studentChain.chain[0].prev_hash === classGenesisHash;
                         
+                        // Build student blocks array with per-block validation
+                        const studentBlocks = studentChain.chain.map((block, idx) => {
+                            let blockValid = true;
+                            if (idx === 0) {
+                                // Genesis block - should link to class genesis
+                                blockValid = (block.prev_hash === classGenesisHash) && 
+                                            (block.hash === block.calculateBlockHash());
+                            } else {
+                                // Regular block
+                                blockValid = (block.prev_hash === studentChain.chain[idx - 1].hash) && 
+                                            (block.hash === block.calculateBlockHash());
+                            }
+                            return {
+                                index: block.index,
+                                hash: block.hash,
+                                prev_hash: block.prev_hash,
+                                valid: blockValid,
+                                timestamp: block.timestamp,
+                                nonce: block.nonce,
+                                status: block.transactions?.status || 'N/A'
+                            };
+                        });
+                        
                         if (!studentInternalValid || !studentGenesisValid || !validationReport[deptId].classes[classId].valid) {
-                            // If Class Chain is invalid (or its parent), all its children are automatically compromised
                             overallValid = false;
-                            validationReport[deptId].classes[classId].students[studentId].valid = false;
-                            validationReport[deptId].classes[classId].students[studentId].reason = `Internal: ${studentInternalValid ? 'OK' : 'FAIL'}, Link: ${studentGenesisValid ? 'OK' : 'FAIL'}, Parent Class: ${validationReport[deptId].classes[classId].valid ? 'OK' : 'COMPROMISED'}`;
+                            validationReport[deptId].classes[classId].students[studentId] = {
+                                name: studentName,
+                                valid: false,
+                                blocks: studentBlocks,
+                                reason: `Internal: ${studentInternalValid ? 'OK' : 'FAIL'}, Link: ${studentGenesisValid ? 'OK' : 'FAIL'}, Parent Class: ${validationReport[deptId].classes[classId].valid ? 'OK' : 'COMPROMISED'}`
+                            };
+                        } else {
+                            validationReport[deptId].classes[classId].students[studentId] = {
+                                name: studentName,
+                                valid: true,
+                                blocks: studentBlocks
+                            };
                         }
                     }
                 }
